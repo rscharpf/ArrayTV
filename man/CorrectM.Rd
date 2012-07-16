@@ -2,13 +2,13 @@
 \alias{CorrectM}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Correct M values based on median of optimal gc win
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-CorrectM(gcFracBoth, useM, Ms, starts, narrays, nparts, samplechr, remainingChr, increm, formaxs1, formaxs2, revmaxs1, revmaxs2, maxorigins, gmaxvals, gmaxvals2)
+CorrectM(gcFracBoth, useM, Ms, starts, narrays, nparts, chr, samplechr, remainingChr, increm, formaxs1, formaxs2, revmaxs1, revmaxs2, maxorigins, gmaxvals, gmaxvals2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +29,9 @@ CorrectM(gcFracBoth, useM, Ms, starts, narrays, nparts, samplechr, remainingChr,
 }
   \item{nparts}{
 %%     ~~Describe \code{nparts} here~~
+}
+  \item{chr}{
+%%     ~~Describe \code{chr} here~~
 }
   \item{samplechr}{
 %%     ~~Describe \code{samplechr} here~~
@@ -92,9 +95,9 @@ CorrectM(gcFracBoth, useM, Ms, starts, narrays, nparts, samplechr, remainingChr,
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (gcFracBoth, useM, Ms, starts, narrays, nparts, samplechr, 
-    remainingChr, increm, formaxs1, formaxs2, revmaxs1, revmaxs2, 
-    maxorigins, gmaxvals, gmaxvals2) 
+function (gcFracBoth, useM, Ms, starts, narrays, nparts, chr, 
+    samplechr, remainingChr, increm, formaxs1, formaxs2, revmaxs1, 
+    revmaxs2, maxorigins, gmaxvals, gmaxvals2) 
 {
     correctedM = foreach(i = 1:narrays, .combine = "cbind") \%dopar\% 
         {

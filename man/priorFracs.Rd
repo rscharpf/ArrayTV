@@ -2,7 +2,7 @@
 \alias{priorFracs}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+gc fractions part of windows
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
