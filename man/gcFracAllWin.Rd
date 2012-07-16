@@ -2,13 +2,13 @@
 \alias{gcFracAllWin}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+calculate gc Fraction in windows of size increment
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-gcFracAllWin(maxwin, increm, allstarts, samplechr, uniqchrs, strategyuse)
+gcFracAllWin(maxwin, increm, chr, allstarts, samplechr, uniqchrs, strategyuse)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +17,9 @@ gcFracAllWin(maxwin, increm, allstarts, samplechr, uniqchrs, strategyuse)
 }
   \item{increm}{
 %%     ~~Describe \code{increm} here~~
+}
+  \item{chr}{
+%%     ~~Describe \code{chr} here~~
 }
   \item{allstarts}{
 %%     ~~Describe \code{allstarts} here~~
@@ -62,7 +65,8 @@ gcFracAllWin(maxwin, increm, allstarts, samplechr, uniqchrs, strategyuse)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (maxwin, increm, allstarts, samplechr, uniqchrs, strategyuse) 
+function (maxwin, increm, chr, allstarts, samplechr, uniqchrs, 
+    strategyuse) 
 {
     gcFracBoth = foreach(vv = 1:4, .combine = list, .multicombine = T) \%:\% 
         foreach(schr = uniqchrs[uniqchrs \%in\% samplechr], .combine = c) \%dopar\% 

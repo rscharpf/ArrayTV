@@ -1,5 +1,5 @@
 gcFracAllWin <-
-function(maxwin,increm,allstarts,samplechr,uniqchrs,strategyuse){
+function(maxwin,increm,chr,allstarts,samplechr,uniqchrs,strategyuse){
   ### This is currently optimizied for 4 nodes, this should be made
   ### more generalizeable if someone has more than 4 nodes, for instance
   gcFracBoth=foreach(vv=1:4,.combine=list,.multicombine=T) %:%

@@ -2,7 +2,7 @@
 \alias{priorFracsRestOfGenome}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+gc fraction in non-sampled part of genome
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~

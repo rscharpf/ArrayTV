@@ -1,5 +1,5 @@
 CorrectM <-
-function(gcFracBoth,useM,Ms,starts,narrays,nparts,samplechr,remainingChr,increm,formaxs1,formaxs2,revmaxs1,revmaxs2,maxorigins,gmaxvals,gmaxvals2){
+function(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,formaxs1,formaxs2,revmaxs1,revmaxs2,maxorigins,gmaxvals,gmaxvals2){
 
 correctedM=foreach(i=1:narrays, .combine='cbind')%dopar% {
 

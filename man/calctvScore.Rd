@@ -2,13 +2,13 @@
 \alias{calctvScore}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+tvScore
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-calctvScore(gcFracBoth, samplechr, nparts, useM)
+calctvScore(gcFracBoth, samplechr, nparts, useM, narrays)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,6 +23,9 @@ calctvScore(gcFracBoth, samplechr, nparts, useM)
 }
   \item{useM}{
 %%     ~~Describe \code{useM} here~~
+}
+  \item{narrays}{
+%%     ~~Describe \code{narrays} here~~
 }
 }
 \details{
@@ -56,7 +59,7 @@ calctvScore(gcFracBoth, samplechr, nparts, useM)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (gcFracBoth, samplechr, nparts, useM) 
+function (gcFracBoth, samplechr, nparts, useM, narrays) 
 {
     optnum = 4
     narrays = ncol(useM)
