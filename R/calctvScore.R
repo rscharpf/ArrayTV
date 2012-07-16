@@ -1,5 +1,5 @@
 calctvScore <-
-function(gcFracBoth,samplechr,nparts,useM){
+function(gcFracBoth,samplechr,nparts,useM,narrays){
 optnum=4
 narrays=ncol(useM)
   ## Again, optimized for 4 nodes
@@ -18,7 +18,7 @@ tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
     priorFrac=(cumsum(priorGC)[(nparts/optnum):length(priorGC)]-c(0,cumsum(priorGC)[1:(length(priorGC)-(nparts/optnum))]))[seq(1,(length(priorGC)-(nparts/optnum)+1) ,nparts/optnum)]/(nparts/optnum)
     priorWeight=nparts/optnum    
   }
-
+### maxwin/increm * 2 must be divisible by 4 right now
  for(hh in 1:(nparts/optnum)){
 
   if(hh==1){
@@ -26,10 +26,13 @@ tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
   }else{
   gcFracA=(gcFracA*((priorWeight+hh-1)/(priorWeight+hh)))+partitionedgcFrac[seq(hh,length(partitionedgcFrac),nparts/optnum)]/(priorWeight+hh)
   }
-  
+
   
   newsp=split(useM,round(gcFracA,2))
+
   toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=colMeans(cc);y})
+
+
   rownames(toplot)=colnames(useM);
   colnames(toplot)=names(newsp)
   fsampled=colSums(useM)
@@ -40,6 +43,7 @@ tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
 
   tvScorepart[hh,]=na.omit(tvscore)
 }
+
   tvScorepart
   }
 return(tvScore)
