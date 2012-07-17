@@ -16,7 +16,7 @@ winlen=reverseExtend+forwardExtend
   startinds=ll-reverseExtend
   startinds[startinds<1]=1
   startinds[startinds>(length(Hsapiens[[schr]])-winlen)]=(length(Hsapiens[[schr]])-winlen)
-  if(length(startinds)>=winlen){
+  if(diff(range(startinds))>=winlen){
   gcIndivChr=letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=winlen,'CG',as.prob=T)[startinds]
   gcIndivChr[is.na(gcIndivChr)]=tail(gcIndivChr,1)
 }else{

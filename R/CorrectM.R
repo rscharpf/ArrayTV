@@ -28,9 +28,9 @@ priorFrac=priorFrac*(maxuse1/(maxuse1+maxuse2))+priorFrac2*(maxuse2/(maxuse1+max
 priorFrac=round(priorFrac,2)
 
 newsp=split(useM[,i],priorFrac)
-correctionVals=sapply(newsp,median)
+#correctionVals=sapply(newsp,median)
+correctionVals=sapply(newsp,mean)
 names(correctionVals)=names(newsp)
-
 ## verify correct TV ##
 fsampled=sum(useM[,i]);
  n=nrow(useM)
@@ -39,6 +39,9 @@ ngc=sapply(newsp,length)
 tvscore=sum(ngc/n * (abs(correctionVals-lambda)))
 print(paste('i is now',i,'tv score is',tvscore))
 
+if(length(remainingChr)==0){
+  priorFracWremaining=priorFrac
+}else{
 ## Get GC for locations from non-sampled regions of genome
 forwardExtend=ifelse(!reversedirMax,maxuse1*increm,ifelse(!reversedirMax2 && maxorigins[i]==F,maxuse2*increm,1)) ## must include at least the starting position
 reverseExtend=ifelse(reversedirMax,maxuse1*increm,ifelse(reversedirMax2,maxuse2*increm,0))
@@ -46,15 +49,17 @@ reverseExtend=ifelse(reversedirMax,maxuse1*increm,ifelse(reversedirMax2,maxuse2*
 schr=chr[chr %in% samplechr]
 #priorFracWremaining=round(priorFracsRestOfGenome(forwardExtend,reverseExtend,samplechr,startToCalcRemainingGC[chr %in% samplechr],schr),2)#remainingChr,startToCalcRemainingGC,chr),2)
 priorFracWremaining=round(priorFracsRestOfGenome(forwardExtend,reverseExtend,remainingChr,starts,chr),2)
+print(paste('forward extend',forwardExtend,'reverse extend',reverseExtend))
 #print(length(which(priorFracWremaining[chr %in% samplechr]>0)))
 
 
 priorFracWremaining[chr %in% samplechr]=priorFrac
-
+}
 
 ## calculate new TV, We only used a sample of the data to get the best window but we will use all the data to get correction values  ##
 newsp=split(Ms[,i],paste(chr,priorFracWremaining,sep='.'))
-correctionVals=sapply(newsp,median)
+#correctionVals=sapply(newsp,median)
+correctionVals=sapply(newsp,mean)
 names(correctionVals)=names(newsp)
 fsampled=sum(Ms[,i]);
  n=nrow(Ms)
@@ -75,7 +80,7 @@ print(paste('mad is',mad(correctedM)))
 print(paste('old mad is',mad(Ms[,i])))
 ###
 
-correctedM
+as(correctedM,"matrix")
 }
 return(correctedM)
 }

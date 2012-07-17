@@ -31,20 +31,30 @@ tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
   newsp=split(useM,round(gcFracA,2))
 
   toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=colMeans(cc);y})
+# toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=apply(cc,2,median);y})  
 
 
-  rownames(toplot)=colnames(useM);
-  colnames(toplot)=names(newsp)
+#  rownames(toplot)=colnames(useM);
+#  colnames(toplot)=names(newsp)
+
   fsampled=colSums(useM)
   n=nrow(useM)
   lambda=fsampled/n
   ngc=sapply(newsp,length)/narrays
+
+  if(is.null(nrow(toplot))){
+  tvscore=sum(rep((ngc/n),each=narrays)*(abs(toplot-lambda)))
+}else{
   tvscore=rowSums(rep((ngc/n),each=narrays)*(abs(toplot-lambda)))
+}
 
   tvScorepart[hh,]=na.omit(tvscore)
+
 }
 
   tvScorepart
+
   }
+
 return(tvScore)
 }
