@@ -1,14 +1,14 @@
 \name{calctvScore}
 \alias{calctvScore}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-tvScore
+\title{calctvScore
+%%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-calctvScore(gcFracBoth, samplechr, nparts, useM, narrays)
+calctvScore(gcFracBoth, samplechr, nparts, useM, narrays, increm, increm2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +26,12 @@ calctvScore(gcFracBoth, samplechr, nparts, useM, narrays)
 }
   \item{narrays}{
 %%     ~~Describe \code{narrays} here~~
+}
+  \item{increm}{
+%%     ~~Describe \code{increm} here~~
+}
+  \item{increm2}{
+%%     ~~Describe \code{increm2} here~~
 }
 }
 \details{
@@ -59,54 +65,57 @@ calctvScore(gcFracBoth, samplechr, nparts, useM, narrays)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (gcFracBoth, samplechr, nparts, useM, narrays) 
+function (gcFracBoth, samplechr, nparts, useM, narrays, increm, 
+    increm2) 
 {
-    optnum = 4
     narrays = ncol(useM)
-    tvScore = foreach(vv = 1:4, .combine = rbind) \%dopar\% {
-        tvScorepart = matrix(0, nrow = nparts/optnum, ncol = narrays)
-        partitionedgcFrac = gcFracBoth[[vv]]
-        if (vv \%in\% c(1, 3)) {
-            priorFrac = 0
-            priorWeight = 0
-        }
-        else if (vv \%in\% c(2, 4)) {
-            priorGC = gcFracBoth[[vv - 1]]
-            priorFrac = (cumsum(priorGC)[(nparts/optnum):length(priorGC)] - 
-                c(0, cumsum(priorGC)[1:(length(priorGC) - (nparts/optnum))]))[seq(1, 
-                (length(priorGC) - (nparts/optnum) + 1), nparts/optnum)]/(nparts/optnum)
-            priorWeight = nparts/optnum
-        }
-        for (hh in 1:(nparts/optnum)) {
-            if (hh == 1) {
-                gcFracA = (partitionedgcFrac[seq(hh, length(partitionedgcFrac), 
-                  nparts/optnum)] + (priorFrac * priorWeight))/(priorWeight + 
-                  1)
+    tvScorepart = foreach(i = 1:2, .combine = "rbind") \%dopar\% 
+        {
+            if (i == 1) {
+                partitionedgcFrac = gcFracBoth[, 1]
             }
             else {
-                gcFracA = (gcFracA * ((priorWeight + hh - 1)/(priorWeight + 
-                  hh))) + partitionedgcFrac[seq(hh, length(partitionedgcFrac), 
-                  nparts/optnum)]/(priorWeight + hh)
+                partitionedgcFrac = gcFracBoth[, 2]
             }
-            newsp = split(useM, round(gcFracA, 2))
-            toplot = sapply(newsp, function(x) {
-                cc = matrix(x, ncol = narrays)
-                y = colMeans(cc)
-                y
-            })
-            rownames(toplot) = colnames(useM)
-            colnames(toplot) = names(newsp)
-            fsampled = colSums(useM)
-            n = nrow(useM)
-            lambda = fsampled/n
-            ngc = sapply(newsp, length)/narrays
-            tvscore = rowSums(rep((ngc/n), each = narrays) * 
-                (abs(toplot - lambda)))
-            tvScorepart[hh, ] = na.omit(tvscore)
+            tvScorepart = matrix(0, nrow = nparts, ncol = narrays)
+            for (hh in 1:nparts) {
+                if (hh == 1) {
+                  gcFracA = partitionedgcFrac[seq(hh, length(partitionedgcFrac), 
+                    nparts)]
+                }
+                else {
+                  gcFracA = (gcFracA * ((hh - 1)/(hh))) + partitionedgcFrac[seq(hh, 
+                    length(partitionedgcFrac), nparts)]/(hh)
+                }
+                quants = sort(unique(quantile(gcFracA, probs = seq(0, 
+                  1, 0.01))))
+                gcFracA = quants[findInterval(gcFracA, quants)]
+                newsp = split(useM, gcFracA)
+                toplot = sapply(newsp, function(x) {
+                  x = matrix(x, ncol = narrays)
+                  y = colMeans(x)
+                  y
+                })
+                fsampled = colSums(useM)
+                n = nrow(useM)
+                lambda = fsampled/n
+                ngc = sapply(newsp, length)/narrays
+                if (is.null(nrow(toplot))) {
+                  tvscore = sum(rep((ngc/n), each = narrays) * 
+                    (abs(toplot - lambda)))
+                }
+                else {
+                  tvscore = rowSums(rep((ngc/n), each = narrays) * 
+                    (abs(toplot - lambda)))
+                }
+                print(paste("windows stretch", ifelse(i == 1, 
+                  hh * increm, hh * increm2), "bp from probes, TV:", 
+                  round(tvscore, 4)))
+                tvScorepart[hh, ] = na.omit(tvscore)
+            }
+            tvScorepart
         }
-        tvScorepart
-    }
-    return(tvScore)
+    return(tvScorepart)
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

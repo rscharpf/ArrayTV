@@ -1,9 +1,9 @@
 gcFracAllWin <-
-function(maxwin,increm,chr,allstarts,samplechr,uniqchrs,strategyuse){
+function(maxwin,maxwin2,increm,increm2,chr,allstarts,samplechr,uniqchrs,strategyuse){
   ### This is currently optimizied for 4 nodes, this should be made
   ### more generalizeable if someone has more than 4 nodes, for instance
-  gcFracBoth=foreach(vv=1:4,.combine=list,.multicombine=T) %:%
-  foreach(schr=uniqchrs[uniqchrs %in% samplechr],.combine=c) %dopar% {
+  #gcFracBoth=foreach(vv=1:2,.combine=list,.multicombine=T) %:%
+  gcFracBoth=foreach(schr=uniqchrs[uniqchrs %in% samplechr],.combine=rbind) %dopar% {
   starts=allstarts[chr %in% schr]
 
 ### STRATEGY 1
@@ -40,22 +40,49 @@ ranges=IRanges(start=rep(starts,each=maxwin/increm/2)-rep(seq((maxwin/2)+increm,
 ### END Strategy 1  
   
 ### STRATEGY 2
-if(strategyuse==2){  
+if(strategyuse==2){
+schr=gsub('23','X',schr)
+schr=gsub('24','X',schr)
+
+print('Getting gc content From BS genome Object')
 pregcFrac=letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=increm,'CG',as.prob=T)
-if(vv==1){
-startinds=rep(starts,each=maxwin/increm/2)+rep(seq(0,(maxwin/2)-increm,increm),length(starts))  
-}else if(vv==2){
-startinds=rep(starts,each=maxwin/increm/2)+rep(seq((maxwin/2),maxwin-increm,increm),length(starts))  
-}else if(vv==3){
-startinds=rep(starts,each=maxwin/increm/2)-rep(seq(increm,maxwin/2,increm),length(starts))  
-}else if(vv==4){
-startinds=rep(starts,each=maxwin/increm/2)-rep(seq((maxwin/2)+increm,maxwin,increm),length(starts))  
-}
-print(paste('gc window chunk',vv))
+#sgc=cumsum(pregcFrac)
+pregcFrac2=letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=increm2,'CG',as.prob=T)
+#pregcFrac2=sgc[(increm2/increm):length(sgc)]-c(0,sgc[1:(length(sgc)-(increm2/increm))])
+print('gc content stored')
+
+
+startinds=rep(starts,each=maxwin/increm)+rep(seq(0,maxwin-increm,increm),length(starts))
+startinds2=rep(starts,each=maxwin2/increm2)+rep(seq(0,maxwin2-increm2,increm2),length(starts))  
+
+startindbackwards=rep(starts,each=maxwin/increm)-rep(seq(increm,maxwin,increm),length(starts))
+startindbackwards2=rep(starts,each=maxwin2/increm2)-rep(seq(increm2,maxwin2,increm2),length(starts))
+
+
+
 startinds[which(startinds<1)]=1
 startinds[which(startinds>length(pregcFrac))]=length(pregcFrac)
-gcFrac=pregcFrac[startinds]
-gcFrac[is.na(gcFrac)]=0
+gcFrac1=pregcFrac[startinds]
+gcFrac1[is.na(gcFrac1)]=0
+
+startinds2[which(startinds2<1)]=1
+startinds2[which(startinds2>length(pregcFrac2))]=length(pregcFrac2)
+gcFrac2=pregcFrac2[startinds2]
+gcFrac2[is.na(gcFrac2)]=0
+
+
+startindbackwards[which(startindbackwards<1)]=1
+startindbackwards[which(startindbackwards>length(pregcFrac))]=length(pregcFrac)
+gcFracbackwards1=pregcFrac[startindbackwards]
+gcFracbackwards1[is.na(gcFracbackwards1)]=0
+
+
+startindbackwards2[which(startindbackwards2<1)]=1
+startindbackwards2[which(startindbackwards2>length(pregcFrac2))]=length(pregcFrac2)
+gcFracbackwards2=pregcFrac2[startindbackwards2]
+gcFracbackwards2[is.na(gcFracbackwards2)]=0
+
+gcFrac=cbind((gcFrac1+gcFracbackwards1)/2,(gcFrac2+gcFracbackwards2)/2)
 
 }
   gcFrac

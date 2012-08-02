@@ -1,41 +1,50 @@
 calctvScore <-
-function(gcFracBoth,samplechr,nparts,useM,narrays){
-optnum=4
+function(gcFracBoth,samplechr,nparts,useM,narrays,increm,increm2){
+
 narrays=ncol(useM)
-  ## Again, optimized for 4 nodes
+
 ### the order of row binding is forward first half, forward second half, reverse first half, reverse second half
-tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
-
-    tvScorepart=matrix(0,nrow=nparts/optnum,ncol=narrays)
-  partitionedgcFrac=gcFracBoth[[vv]]
 
 
-  if(vv%in% c(1,3)){
-     priorFrac=0
-     priorWeight=0
-  }else if(vv %in% c(2,4)){    
-    priorGC=gcFracBoth[[vv-1]]
-    priorFrac=(cumsum(priorGC)[(nparts/optnum):length(priorGC)]-c(0,cumsum(priorGC)[1:(length(priorGC)-(nparts/optnum))]))[seq(1,(length(priorGC)-(nparts/optnum)+1) ,nparts/optnum)]/(nparts/optnum)
-    priorWeight=nparts/optnum    
-  }
+  tvScorepart=foreach(i=1:2, .combine='rbind')%dopar% {
+  if(i==1){
+  partitionedgcFrac=gcFracBoth[,1]#[[1]]  ### GC WINDOWS MOVING IN FORWARD DIRECTION
+  #priorpartitionedgcFrac=gcFracBoth[,2]#[[2]]  ### GC WINDOWS MOVING IN REVERSE DIRECTION
+}else{
+  partitionedgcFrac=gcFracBoth[,2]#[[1]]  ### GC WINDOWS MOVING IN FORWARD DIRECTION
+  #priorpartitionedgcFrac=gcFracBoth[,4]#[[2]]  ### GC WINDOWS MOVING IN REVERSE DIRECTION
+}
+  tvScorepart=matrix(0,nrow=nparts,ncol=narrays)
+  
 ### maxwin/increm * 2 must be divisible by 4 right now
- for(hh in 1:(nparts/optnum)){
+ for(hh in 1:nparts){
+
 
   if(hh==1){
-  gcFracA=(partitionedgcFrac[seq(hh,length(partitionedgcFrac),nparts/optnum)]+(priorFrac*priorWeight))/(priorWeight+1)
+  gcFracA=partitionedgcFrac[seq(hh,length(partitionedgcFrac),nparts)]
+  ## added
+  #gcFracA2=priorpartitionedgcFrac[seq(hh,length(priorpartitionedgcFrac),nparts)]
+  #gcFracA=(gcFracA1+gcFracA2)/2
+  ## end additon
   }else{
-  gcFracA=(gcFracA*((priorWeight+hh-1)/(priorWeight+hh)))+partitionedgcFrac[seq(hh,length(partitionedgcFrac),nparts/optnum)]/(priorWeight+hh)
+  gcFracA=(gcFracA*((hh-1)/(hh)))+partitionedgcFrac[seq(hh,length(partitionedgcFrac),nparts)]/(hh)
+  ## added ##
+  #gcFracA2=(gcFracA2*((hh-1)/(hh)))+priorpartitionedgcFrac[seq(hh,length(priorpartitionedgcFrac),nparts)]/(hh)
+  #gcFracA=(gcFracA1+gcFracA2)/2
   }
 
-  
-  newsp=split(useM,round(gcFracA,2))
 
-  toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=colMeans(cc);y})
+   quants=sort(unique(quantile(gcFracA,probs=seq(0,1,.01))))
+   gcFracA=quants[findInterval(gcFracA,quants)]
+  
+  newsp=split(useM,gcFracA)
+
+
+  ##sapply(newsp,function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));})
+  #toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=apply(cc,2,function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));});y})
+  toplot=sapply(newsp,function(x){x=matrix(x,ncol=narrays);y=colMeans(x);y})
 # toplot=sapply(newsp,function(x){cc=matrix(x,ncol=narrays);y=apply(cc,2,median);y})  
 
-
-#  rownames(toplot)=colnames(useM);
-#  colnames(toplot)=names(newsp)
 
   fsampled=colSums(useM)
   n=nrow(useM)
@@ -47,14 +56,13 @@ tvScore=foreach(vv=1:4,.combine=rbind) %dopar% {
 }else{
   tvscore=rowSums(rep((ngc/n),each=narrays)*(abs(toplot-lambda)))
 }
-
+  print(paste('windows stretch',ifelse(i==1,hh*increm,hh*increm2),'bp from probes, TV:', round(tvscore,4)))
   tvScorepart[hh,]=na.omit(tvscore)
 
 }
+ tvScorepart 
+}
 
-  tvScorepart
 
-  }
-
-return(tvScore)
+return(tvScorepart)
 }

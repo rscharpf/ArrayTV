@@ -1,8 +1,8 @@
 \name{plotTV}
 \alias{plotTV}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-plot tv scores
+\title{plotTV
+%%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~

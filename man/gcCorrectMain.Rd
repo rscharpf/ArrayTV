@@ -1,14 +1,14 @@
 \name{gcCorrectMain}
 \alias{gcCorrectMain}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-Main function
+\title{gcCorrectMain
+%%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-gcCorrectMain(Ms, chr, starts, nodes, increms, maxwins, outputTVs, outputChrReg, platform)
+gcCorrectMain(Ms, chr, starts, samplechr, nodes, increms, maxwins, build)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,6 +21,9 @@ gcCorrectMain(Ms, chr, starts, nodes, increms, maxwins, outputTVs, outputChrReg,
   \item{starts}{
 %%     ~~Describe \code{starts} here~~
 }
+  \item{samplechr}{
+%%     ~~Describe \code{samplechr} here~~
+}
   \item{nodes}{
 %%     ~~Describe \code{nodes} here~~
 }
@@ -30,14 +33,8 @@ gcCorrectMain(Ms, chr, starts, nodes, increms, maxwins, outputTVs, outputChrReg,
   \item{maxwins}{
 %%     ~~Describe \code{maxwins} here~~
 }
-  \item{outputTVs}{
-%%     ~~Describe \code{outputTVs} here~~
-}
-  \item{outputChrReg}{
-%%     ~~Describe \code{outputChrReg} here~~
-}
-  \item{platform}{
-%%     ~~Describe \code{platform} here~~
+  \item{build}{
+%%     ~~Describe \code{build} here~~
 }
 }
 \details{
@@ -71,82 +68,45 @@ gcCorrectMain(Ms, chr, starts, nodes, increms, maxwins, outputTVs, outputChrReg,
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (Ms, chr, starts, nodes, increms, maxwins, outputTVs, 
-    outputChrReg, platform) 
+function (Ms, chr, starts, samplechr, nodes, increms, maxwins, 
+    build) 
 {
-    library("BSgenome.Hsapiens.UCSC.hg18")
+    do.call(library, list(paste("BSgenome.Hsapiens.UCSC.", build, 
+        sep = "")))
     library("RColorBrewer")
     library("multicore")
     library("foreach")
     library("grDevices")
     library("doMC")
+    library("DNAcopy")
     registerDoMC(nodes)
-    if (exists("correctedM")) {
-        rm(correctedM)
-    }
-    source("0605gcFragmentCorrectFunctions.R")
-    if (outputTVs & outputChrReg) {
-        pdf(paste("chrViews", platform, ".pdf", sep = ""))
-    }
-    samplechr = paste("chr", c(1, 4, 8, 10), sep = "")
     uniqchrs = unique(chr)
     remainingChr = uniqchrs[is.na(match(uniqchrs, samplechr))]
     narrays = ncol(Ms)
-    for (correctind in 1:(length(increms))) {
-        if (exists("correctedM")) {
-            oldMs = Ms
-            Ms = correctedM
-        }
-        increm = increms[correctind]
-        maxwin = maxwins[correctind]
-        nparts = (maxwin/increm) * 2
-        strategyuse = 2
-        gcFracBoth = gcFracAllWin(maxwin, increm, chr, starts, 
-            samplechr, uniqchrs, strategyuse)
-        useM = Ms[chr \%in\% samplechr, ]
-        tvScore = calctvScore(gcFracBoth, samplechr, nparts, 
-            useM, narrays)
-        rownames(tvScore) = c(seq(increm, maxwin, increm), -seq(increm, 
-            maxwin, increm))
-        tvScore2 = calctvScore2(useM, gcFracBoth, tvScore, nparts, 
-            narrays)
-        maxTVscores = rep(0, narrays)
-        correctionVals = list()
-        optWins = rep(0, narrays)
-        formaxs1 = tvScoreFirstHalfMax(tvScore)
-        revmaxs1 = tvScoreSecondHalfMax(tvScore)
-        formaxs2 = tvScoreSecondHalfMax(tvScore2)
-        revmaxs2 = tvScoreFirstHalfMax(tvScore2)
-        gmaxvals = apply(tvScore, 2, max)
-        gmaxvals2 = apply(tvScore2, 2, max)
-        maxorigins = gmaxvals >= gmaxvals2
-        if (outputTVs) {
-            plotTV(tvScore, tvScore2, narrays, increm)
-        }
-        correctedM = CorrectM(gcFracBoth, useM, Ms, starts, narrays, 
-            nparts, chr, samplechr, remainingChr, increm, formaxs1, 
-            formaxs2, revmaxs1, revmaxs2, maxorigins, gmaxvals, 
-            gmaxvals2)
-        if (outputChrReg) {
-            if (exists("oldMs")) {
-                Ms = oldMs
-            }
-            for (jj in 1:narrays) {
-                par(mfrow = c(2, 1))
-                minrange = 8.5e+07
-                maxrange = 8.9e+07
-                Msplot = Ms[starts > minrange & starts < maxrange & 
-                  chr == "chr1", jj]
-                ylim1 = quantile(Msplot, c(0.002, 0.998))
-                plot(starts[starts > minrange & starts < maxrange & 
-                  chr == "chr1"], Msplot, ylim = ylim1)
-                plot(starts[starts > minrange & starts < maxrange & 
-                  chr == "chr1"], correctedM[starts > minrange & 
-                  starts < maxrange & chr == "chr1", jj], ylim = ylim1)
-            }
-        }
+    increm = increms[1]
+    increm2 = increms[2]
+    maxwin = maxwins[1]
+    maxwin2 = maxwins[2]
+    nparts = (maxwin/increm)
+    if (nparts != maxwin2/increm2) {
+        readline("Bad Increment Values")
     }
-    graphics.off()
+    strategyuse = 2
+    gcFracBoth = gcFracAllWin(maxwin, maxwin2, increm, increm2, 
+        chr, starts, samplechr, uniqchrs, strategyuse)
+    useM = as(Ms[chr \%in\% samplechr, ], "matrix")
+    tvScore = calctvScore(gcFracBoth, samplechr, nparts, useM, 
+        narrays, increm, increm2)
+    rownames(tvScore) = c(seq(increm, maxwin, increm), seq(increm2, 
+        maxwin2, increm2))
+    maxTVscores = rep(0, narrays)
+    correctionVals = list()
+    optWins = rep(0, narrays)
+    gmaxvals = apply(tvScore, 2, max)
+    gmaxvalsInd = apply(tvScore, 2, which.max)
+    correctedM = CorrectM(gcFracBoth, useM, Ms, starts, narrays, 
+        nparts, chr, samplechr, remainingChr, increm, increm2, 
+        gmaxvals, gmaxvalsInd, tvScore)
     return(correctedM)
   }
 }

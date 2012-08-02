@@ -1,14 +1,14 @@
 \name{priorFracs}
 \alias{priorFracs}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-gc fractions part of windows
+\title{priorFracs
+%%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-priorFracs(gcFracBoth, maxuse, vv, nparts, v1, v2)
+priorFracs(gcFracBoth, maxuse, nparts, tvScore, increm, increm2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,17 +18,17 @@ priorFracs(gcFracBoth, maxuse, vv, nparts, v1, v2)
   \item{maxuse}{
 %%     ~~Describe \code{maxuse} here~~
 }
-  \item{vv}{
-%%     ~~Describe \code{vv} here~~
-}
   \item{nparts}{
 %%     ~~Describe \code{nparts} here~~
 }
-  \item{v1}{
-%%     ~~Describe \code{v1} here~~
+  \item{tvScore}{
+%%     ~~Describe \code{tvScore} here~~
 }
-  \item{v2}{
-%%     ~~Describe \code{v2} here~~
+  \item{increm}{
+%%     ~~Describe \code{increm} here~~
+}
+  \item{increm2}{
+%%     ~~Describe \code{increm2} here~~
 }
 }
 \details{
@@ -62,29 +62,21 @@ priorFracs(gcFracBoth, maxuse, vv, nparts, v1, v2)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (gcFracBoth, maxuse, vv, nparts, v1, v2) 
+function (gcFracBoth, maxuse, nparts, tvScore, increm, increm2) 
 {
-    optnum = 4
-    extras = maxuse/(nparts/optnum)
-    gcAdd = 0
-    if (extras > 1) {
-        mo = maxuse\%\%(nparts/optnum)
-        if (mo == 0) {
-            gcAdd = gcFracBoth[[v2[-vv]]]
-        }
-        else {
-            gcAdd = gcFracBoth[[v2[-vv]]]
-            mods = (1:length(gcAdd))\%\%(nparts/optnum)
-            gcAdd[mods > mo | mods == 0] = 0
-        }
+    offset = as.numeric(rownames(tvScore)[maxuse])/ifelse(maxuse > 
+        nrow(tvScore)/2, increm2, increm)
+    if (maxuse > nrow(tvScore)/2) 
+        priorGC = gcFracBoth[, 2]
+    else {
+        priorGC = gcFracBoth[, 1]
     }
-    gcFracUse = gcFracBoth[[v1[-vv]]] + gcAdd
-    priorGC = gcFracUse
-    offset = ifelse(maxuse > (nparts/optnum), nparts/optnum, 
-        maxuse)
     priorFrac = (cumsum(priorGC)[offset:length(priorGC)] - c(0, 
         cumsum(priorGC)[1:(length(priorGC) - offset)]))[seq(1, 
-        (length(priorGC) - offset + 1), nparts/optnum)]/maxuse
+        (length(priorGC) - offset + 1), nparts)]/offset
+    quants = sort(unique(quantile(priorFrac, probs = seq(0, 1, 
+        0.01))))
+    priorFrac = quants[findInterval(priorFrac, quants)]
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

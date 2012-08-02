@@ -1,8 +1,8 @@
 \name{optimalwin}
 \alias{optimalwin}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-helper function
+\title{optimalwin
+%%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
@@ -67,9 +67,9 @@ function (useM, gcFracBoth, tvScore, vv, ar, nparts)
     optnum = 4
     v1 = c(3, 1)
     v2 = c(4, 2)
-    tvScoreForwards = tvScore[1:(nrow(tvScore)/2), ]
-    tvScoreReverses = tvScore[((nrow(tvScore)/2) + 1):nrow(tvScore), 
-        ]
+    tvScoreForwards = as(tvScore[1:(nrow(tvScore)/2), ], "matrix")
+    tvScoreReverses = as(tvScore[((nrow(tvScore)/2) + 1):nrow(tvScore), 
+        ], "matrix")
     formaxs = apply(tvScoreForwards, 2, which.max)
     revmaxs = apply(tvScoreReverses, 2, which.max)
     tvScorepart = vector()
@@ -79,20 +79,22 @@ function (useM, gcFracBoth, tvScore, vv, ar, nparts)
     priorWeight = maxuse
     for (hh in 1:((nparts/optnum) * 2)) {
         if (hh > (nparts/optnum)) {
+            seqinc = hh - (nparts/optnum)
             partitionedgcFrac = gcFracBoth[[v2[vv]]]
         }
         else {
+            seqinc = hh
             partitionedgcFrac = gcFracBoth[[v1[vv]]]
         }
         cat(".")
         if (hh == 1) {
-            gcFracA = (partitionedgcFrac[seq(hh, length(partitionedgcFrac), 
+            gcFracA = (partitionedgcFrac[seq(seqinc, length(partitionedgcFrac), 
                 nparts/optnum)] + (priorFrac * priorWeight))/(priorWeight + 
                 1)
         }
         else {
             gcFracA = (gcFracA * ((priorWeight + hh - 1)/(priorWeight + 
-                hh))) + partitionedgcFrac[seq(hh, length(partitionedgcFrac), 
+                hh))) + partitionedgcFrac[seq(seqinc, length(partitionedgcFrac), 
                 nparts/optnum)]/(priorWeight + hh)
         }
         newsp = split(useM[, ar], round(gcFracA, 2))

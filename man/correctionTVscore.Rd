@@ -1,31 +1,28 @@
-\name{calctvScore2}
-\alias{calctvScore2}
+\name{correctionTVscore}
+\alias{correctionTVscore}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{calctvScore2
+\title{correctionTVscore
 %%  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-calctvScore2(useM, gcFracBoth, tvScore, nparts, narrays)
+correctionTVscore(useM, gcFrac, arrayn, windowl)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{useM}{
 %%     ~~Describe \code{useM} here~~
 }
-  \item{gcFracBoth}{
-%%     ~~Describe \code{gcFracBoth} here~~
+  \item{gcFrac}{
+%%     ~~Describe \code{gcFrac} here~~
 }
-  \item{tvScore}{
-%%     ~~Describe \code{tvScore} here~~
+  \item{arrayn}{
+%%     ~~Describe \code{arrayn} here~~
 }
-  \item{nparts}{
-%%     ~~Describe \code{nparts} here~~
-}
-  \item{narrays}{
-%%     ~~Describe \code{narrays} here~~
+  \item{windowl}{
+%%     ~~Describe \code{windowl} here~~
 }
 }
 \details{
@@ -59,16 +56,16 @@ calctvScore2(useM, gcFracBoth, tvScore, nparts, narrays)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (useM, gcFracBoth, tvScore, nparts, narrays) 
+function (useM, gcFrac, arrayn, windowl) 
 {
-    tvScore2 = foreach(vv = 1:2, .combine = "rbind") \%:\% foreach(ar = 1:narrays, 
-        .combine = "cbind") \%dopar\% {
-        print(vv)
-        print(ar)
-        tvScorepart = as(optimalwin(useM, gcFracBoth, tvScore, 
-            vv, ar, nparts), "matrix")
-    }
-    return(tvScore2)
+    newsp = split(useM, gcFrac)
+    correctionVals = sapply(newsp, mean)
+    fsampled = sum(useM)
+    n = length(useM)
+    lambda = fsampled/n
+    ngc = sapply(newsp, length)
+    tvscore = sum(ngc/n * (abs(correctionVals - lambda)))
+    return(tvscore)
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
