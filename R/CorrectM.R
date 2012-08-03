@@ -14,7 +14,7 @@ maxuse1=gmaxvalsInd[i]
 priorFrac=priorFracs(gcFracBoth,maxuse1,nparts,tvScore,increm,increm2)
 
 if(length(remainingChr)==0){
-  priorFracWremaining=priorFracUse
+  priorFracWremaining=priorFrac
 }else{
 ## Get GC for locations from non-sampled regions of genome
 forwardExtend=as.numeric(rownames(tvScore)[maxuse1])
