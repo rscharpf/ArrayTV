@@ -1,5 +1,5 @@
 CorrectM <-
-function(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,increm2,gmaxvals,gmaxvalsInd,tvScore,jittercorrection){
+function(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,increm2,gmaxvals,gmaxvalsInd,tvScore){
 
   
 priorFracWremaining=foreach(i=which(!duplicated(gmaxvalsInd)), .combine='list',.multicombine=T)%dopar% {
@@ -14,7 +14,7 @@ maxuse1=gmaxvalsInd[i]
 priorFrac=priorFracs(gcFracBoth,maxuse1,nparts,tvScore,increm,increm2)
 
 if(length(remainingChr)==0){
-  priorFracWremaining=priorFrac
+  priorFracWremaining=priorFracUse
 }else{
 ## Get GC for locations from non-sampled regions of genome
 forwardExtend=as.numeric(rownames(tvScore)[maxuse1])
@@ -32,7 +32,7 @@ priorFracWremaining
 
 correctedM=foreach(i=1:narrays, .combine='cbind')%dopar% {
 
-if(narrays==1 | !is.list(priorFracWremaining)){
+if(narrays==1){
 priorFracWremainingUse=priorFracWremaining
 }else{
 priorFracWremainingUse=priorFracWremaining[[match(gmaxvalsInd[i],unique(gmaxvalsInd))]]
@@ -56,7 +56,6 @@ priorFracWremainingUse=priorFracWremaining[[match(gmaxvalsInd[i],unique(gmaxvals
 #### Lets Try to Remove Large CNVs Before Calculating the Corrections, otherwise they will Interfere 
 cm=cumsum(Ms[,i])
 cm2=cm[200:length(cm)]-c(0,cm[1:(length(cm)-200)])
-cm2=cm2
 inds=seq(1,length(cm2),200)
 cm3=cm2[inds]
 chrForCNA=chr[inds]
@@ -74,7 +73,6 @@ chromMeans=aggregate(markrep, list(chromrep),mean)
  segment.smoothed.CNA.object$output$chromMean=chromMeans$x[match(segment.smoothed.CNA.object$output$chrom,chromMeans$Group.1)]
 toremove=which(abs(segment.smoothed.CNA.object$output$seg.mean-segment.smoothed.CNA.object$output$chromMean)>maduse &  segment.smoothed.CNA.object$output$chrom %in% multiblock & ( segment.smoothed.CNA.object$output$seg.mean > meduse+(maduse*2.5) | segment.smoothed.CNA.object$output$seg.mean < meduse-(maduse*2.5 )))
 
-
 locsAsRange=GRanges(seqnames=chr,ranges=IRanges(start=starts,width=1))
 removestart=segment.smoothed.CNA.object$output$loc.start[toremove]
 removeend=segment.smoothed.CNA.object$output$loc.end[toremove]
@@ -84,7 +82,7 @@ removeAsRange=GRanges(seqnames=removechr,ranges=IRanges(start=removestart,end=re
 tokeepLogical=is.na(GenomicRanges::match(locsAsRange,removeAsRange))
 tokeep=which(tokeepLogical)
 toremove=which(!tokeepLogical)
-if(length(toremove)>length(tokeep)){ tokeep=1:length(tokeepLogical);toremove=numeric()}
+
  
 ## calculate new TV, We only used a sample of the data to get the best window but we will use all the data to get correction values  ##
 newsp=split(Ms[tokeep,i],paste(chr[tokeep],priorFracWremainingUse[tokeep],sep='.'))
@@ -113,8 +111,7 @@ print(paste('we removed',length(toremove),'locations before calculating correcti
 print(paste(length(which(is.na(allcorrections[toremove]))),'point(s) for array',i,'will recieve no gc correction'))
  allcorrections[toremove][which(is.na(allcorrections[toremove]))]=lambda
 
-### IF WE INCREASE THE SPREAD OF OUR CORRECTIONS DOES THE AUTOCORRELATION IMPROVE? ###
-if(jittercorrection){
+### IF WE INCREASE THE SPREAD OF OUR CORRECTIONS DOES THE AUTOCORRELATION IMPROVE? ###      
 cnr=1
 asum=vector()
 for(jj in seq(1,1.2,.05)){
@@ -124,7 +121,7 @@ for(jj in seq(1,1.2,.05)){
   cnr=cnr+1
 }
 mfact=seq(1,1.2,.05)[which.min(asum)]
-}else{ mfact=1}
+
  
 chromMediansAll=aggregate(Ms[,i],list(chr),median)
 correctedM=chromMediansAll$x[match(chr,chromMediansAll$Group.1)] +Ms[,i]-allcorrections*mfact

@@ -1,5 +1,5 @@
 gcCorrectMain <-
-function(Ms,chr,starts,samplechr,nodes,increms,maxwins,build){
+function(Ms,chr,starts,samplechr,nodes,increms,maxwins,jittercorrection=F,build){
   do.call(library,list(paste("BSgenome.Hsapiens.UCSC.",build,sep='')))
   library('RColorBrewer')
   library('multicore')
@@ -48,7 +48,7 @@ gmaxvalsInd=apply(tvScore,2,which.max)
 #plotTV(tvScore,tvScore2,narrays,increm)
 #}
   
-correctedM=CorrectM(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,increm2,gmaxvals,gmaxvalsInd,tvScore)
+correctedM=CorrectM(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,increm2,gmaxvals,gmaxvalsInd,tvScore,jittercorrection)
 
 return(correctedM)
 }
