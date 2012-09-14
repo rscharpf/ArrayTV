@@ -1,5 +1,5 @@
 gcCorrectMain <-
-function(Ms,chr,starts,samplechr,nodes,increms,maxwins,jittercorrection=F,build){
+function(Ms,chr,starts,samplechr,nodes,increms,maxwins,jittercorrection=F,returnOnlyTV=F,build){
   do.call(library,list(paste("BSgenome.Hsapiens.UCSC.",build,sep='')))
   library('RColorBrewer')
   library('multicore')
@@ -27,11 +27,14 @@ gcFracBoth=gcFracAllWin(maxwin,maxwin2,increm,increm2,chr,starts,samplechr,uniqc
 useM=as(Ms[chr  %in% samplechr,],"matrix")
 
 
-## first TVscore  
+## first TVscore
 tvScore=calctvScore(gcFracBoth,samplechr,nparts,useM,narrays,increm,increm2)
 
 rownames(tvScore)=c(seq(increm,maxwin,increm),seq(increm2,maxwin2,increm2))
 
+if(returnOnlyTV){
+  return(tvScore)
+}
 
 #### CHECK TO SEE IF TVSCORES ARE THE SAME AS ANTICIPATED
 
@@ -47,7 +50,7 @@ gmaxvalsInd=apply(tvScore,2,which.max)
 #if(outputTVs){
 #plotTV(tvScore,tvScore2,narrays,increm)
 #}
-  
+
 correctedM=CorrectM(gcFracBoth,useM,Ms,starts,narrays,nparts,chr,samplechr,remainingChr,increm,increm2,gmaxvals,gmaxvalsInd,tvScore,jittercorrection)
 
 return(correctedM)
