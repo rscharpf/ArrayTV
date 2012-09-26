@@ -1,11 +1,11 @@
 gcFracAllWin <- function(maxwin, maxwin2, increm,
 			 increm2, chr, allstarts,
-			 samplechr, uniqchrs, strategyuse){
+			 samplechr, uniqchrs, strategyuse, annotation.pkg){
 	## This is currently optimizied for 4 nodes, this should be made
 	## more generalizeable if someone has more than 4 nodes, for instance
 	## gcFracBoth=foreach(vv=1:2,.combine=list,.multicombine=T) %:%
-	gcFracBoth <- foreach(schr=uniqchrs[uniqchrs %in% samplechr],.combine=rbind) %dopar% {
-		starts=allstarts[chr %in% schr]
+	gcFracBoth <- foreach(schr=uniqchrs[uniqchrs %in% samplechr], .combine=rbind, .packages=c(annotation.pkg, "ArrayTV")) %dopar% {
+		starts <- allstarts[chr %in% schr]
 		## STRATEGY 1
 		if(strategyuse==1){
 			print(paste('vv is',vv)  )
@@ -36,18 +36,18 @@ gcFracAllWin <- function(maxwin, maxwin2, increm,
 
 		## STRATEGY 2
 		if(strategyuse==2){
-			schr <- gsub('23','X',schr)
-			schr <- gsub('24','X',schr)
+			schr <- gsub('23', 'X', schr)
+			schr <- gsub('24', 'X', schr)
 
 			print('Getting gc content From BS genome Object')
-			pregcFrac <- letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=increm,'CG',as.prob=T)
+			pregcFrac <- letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]), view.width=increm, 'CG', as.prob=TRUE)
 			## sgc=cumsum(pregcFrac)
-			pregcFrac2 <- letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=increm2,'CG',as.prob=T)
+			pregcFrac2 <- letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]), view.width=increm2, 'CG', as.prob=TRUE)
 			## pregcFrac2=sgc[(increm2/increm):length(sgc)]-c(0,sgc[1:(length(sgc)-(increm2/increm))])
 			message('gc content stored')
 
-			startinds <- rep(starts, each=maxwin/increm) + rep(seq(0,maxwin-increm,increm), length(starts))
-			startinds2 <- rep(starts, each=maxwin2/increm2) + rep(seq(0, maxwin2-increm2, increm2), length(starts))
+			startinds <- rep(starts, each=(maxwin / increm)) + rep(seq(0, maxwin-increm, increm), length(starts))
+			startinds2 <- rep(starts, each=(maxwin2 / increm2)) + rep(seq(0, maxwin2-increm2, increm2), length(starts))
 
 			startindbackwards <- rep(starts, each=maxwin/increm) - rep(seq(increm, maxwin, increm), length(starts))
 			startindbackwards2 <- rep(starts, each=maxwin2/increm2) - rep(seq(increm2, maxwin2, increm2), length(starts))
@@ -74,8 +74,8 @@ gcFracAllWin <- function(maxwin, maxwin2, increm,
 			gcFracbackwards2[is.na(gcFracbackwards2)] <- 0
 
 			gcFrac <- cbind((gcFrac1 + gcFracbackwards1) / 2, (gcFrac2 + gcFracbackwards2) / 2)
-		}
+		} ## end strategy 2
 		gcFrac
-	}
+	} ## end foreach statement
 	return(gcFracBoth)
 }
