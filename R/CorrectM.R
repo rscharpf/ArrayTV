@@ -24,7 +24,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 	}
 
 
-	correctedM <- foreach(i=1:narrays, .combine='cbind', .packages="ArrayTV") %dopar% {
+	correctedM <- foreach(i=seq_along(narrays), .combine='cbind', .packages="ArrayTV") %dopar% {
 		if(narrays==1 | !is.list(priorFracWremaining)){
 			priorFracWremainingUse <- priorFracWremaining
 		}else{
@@ -47,7 +47,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 
 		## Lets Try to Remove Large CNVs Before Calculating the Corrections, otherwise they will Interfere
 		cm <- cumsum(Ms[, i])
-		cm2 <- cm[200:length(cm)] - c(0, cm[seq_along(length(cm)-200)])
+		cm2 <- cm[200:length(cm)] - c(0, cm[seq_len(length(cm)-200)])
 		cm2 <- cm2
 		inds <- seq(1, length(cm2), 200)
 		cm3 <- cm2[inds]
