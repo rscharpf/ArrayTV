@@ -21,7 +21,7 @@ function(Ms,chr,starts,samplechr,nodes,increms,maxwins,jittercorrection=F,return
   if(nparts != maxwin2/increm2){readline('Bad Increment Values')}
   strategyuse=2
 
-gcFracBoth=gcFracAllWin(maxwin,maxwin2,increm,increm2,chr,starts,samplechr,uniqchrs,strategyuse)
+  gcFracBoth=gcFracAllWin(maxwin,maxwin2,increm,increm2,chr,starts,samplechr,uniqchrs,strategyuse)
 
 
 useM=as(Ms[chr  %in% samplechr,],"matrix")
