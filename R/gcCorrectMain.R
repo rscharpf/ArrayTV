@@ -1,6 +1,6 @@
 gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes, increms,
 			  maxwins, jittercorrection=FALSE,
-			  returnOnlyTV=FALSE, build){
+			  returnOnlyTV=FALSE, build, verbose=FALSE){
 	do.call(library, list(paste("BSgenome.Hsapiens.UCSC.", build, sep='')))
 	pkgname <- paste("BSgenome.Hsapiens.UCSC.", build, sep="")
 	## EITAN:  These should be declared in the DESCRIPTION
@@ -26,15 +26,15 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes, increms,
 	}
 	strategyuse <- 2
 	## RS: I think you need to have the annotation package in your foreach call
-	gcFracBoth <- gcFracAllWin(maxwin, maxwin2, increm, increm2, chr, starts, samplechr, uniqchrs, strategyuse, annotation.pkg=pkgname)
+	gcFracBoth <- gcFracAllWin(maxwin, maxwin2, increm, increm2, chr, starts, samplechr, uniqchrs, strategyuse, annotation.pkg=pkgname,
+				   verbose=verbose)
 
 	useM <- as(Ms[chr %in% samplechr, ], "matrix")
 
 	## first TVscore
-	tvScore <- calctvScore(gcFracBoth, samplechr, nparts, useM, narrays, increm, increm2)
-	dimnames(tvScore) <- list(paste(c(seq(increm, maxwin, increm), seq(increm2, maxwin2, increm2)), "bp", sep=""),
+	tvScore <- calctvScore(gcFracBoth, samplechr, nparts, useM, narrays, increm, increm2, verbose=verbose)
+	dimnames(tvScore) <- list(c(seq(increm, maxwin, increm), seq(increm2, maxwin2, increm2)),
 				  colnames(Ms))
-
 	if(returnOnlyTV) {
 		result <- tvScore
 	} else {
@@ -49,12 +49,15 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes, increms,
 		## Plot TV vals ##
 		## if(outputTVs){
 		## plotTV(tvScore,tvScore2,narrays,increm)
-
 		correctedM <- CorrectM(gcFracBoth, useM, Ms, starts, narrays, nparts,
 				       chr, samplechr, remainingChr,
 				       increm, increm2, gmaxvals, gmaxvalsInd,
-				       tvScore, jittercorrection)
+				       tvScore, jittercorrection,
+				       verbose=verbose)
 		result <- correctedM
+	}
+	if(returnOnlyTV) {
+		rownames(result) <- paste(c(seq(increm, maxwin, increm), seq(increm2, maxwin2, increm2)), "bp", sep="")
 	}
 	return(result)
 }
