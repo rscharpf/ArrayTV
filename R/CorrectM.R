@@ -55,7 +55,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		startsForCNA <- starts[inds]
 		CNA.object <- CNA(cm3, chrForCNA, startsForCNA, data.type = c("logratio"), sampleid=i)
 		## smoothed.CNA.object <- smooth.CNA(CNA.object)
-		segment.smoothed.CNA.object <- segment(CNA.object, verbose = 1, min.width=5)
+		segment.smoothed.CNA.object <- segment(CNA.object, verbose = as.numeric(verbose), min.width=5)
 		markrep <- rep(segment.smoothed.CNA.object$output$seg.mean,segment.smoothed.CNA.object$output$num.mark)
 		chromrep <- rep(segment.smoothed.CNA.object$output$chrom,segment.smoothed.CNA.object$output$num.mark)
 		meduse <- mean(markrep)
