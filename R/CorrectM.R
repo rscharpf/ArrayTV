@@ -1,50 +1,15 @@
-CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
-		     samplechr, remainingChr, increm, increm2, gmaxvals, gmaxvalsInd, tvScore,
-		     jittercorrection, verbose=FALSE){
-	priorFracWremaining <- foreach(i=which(!duplicated(gmaxvalsInd)), .combine='list', .multicombine=TRUE, .packages="ArrayTV") %dopar% {
-		## print highest tv ##
-		if(verbose) print(paste('A maximum first pass  TV is', gmaxvals[i], 'in window', rownames(tvScore)[gmaxvalsInd[i]]))
-		## maximum tv score window
-		maxuse1 <- gmaxvalsInd[i]
+CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,userProvidedGC=F,gmaxvalsInd=0,jittercorrection=F,
+                     tvScore,gcFracBoth,nparts,samplechr,increms, verbose=FALSE){
 
-		priorFrac <- priorFracs(gcFracBoth, maxuse1, nparts, tvScore,
-					increm, increm2)
-		if(length(remainingChr)==0){
-			priorFracWremaining <- priorFrac
-		}else{
-			## Get GC for locations from non-sampled regions of genome
-			forwardExtend <- as.numeric(rownames(tvScore)[maxuse1])
-			reverseExtend <- forwardExtend
+    correctedM=foreach(i=1:narrays, .combine='cbind')%dopar% {
 
-			priorFracWremaining <- priorFracsRestOfGenome(forwardExtend, reverseExtend, remainingChr, starts, chr)
-			if(verbose) print(paste('forward extend', forwardExtend,'reverse extend', reverseExtend))
-			priorFracWremaining[chr %in% samplechr] <- priorFrac
-		}
-		priorFracWremaining
-	}
+        if(narrays==1 | !is.list(priorFracWremaining)){
+            priorFracWremainingUse=priorFracWremaining
+        }else{
+            priorFracWremainingUse=priorFracWremaining[[match(gmaxvalsInd[i],unique(gmaxvalsInd))]]
+        }
 
 
-	correctedM <- foreach(i=seq_len(narrays), .combine='cbind', .packages="ArrayTV") %dopar% {
-		if(narrays==1 | !is.list(priorFracWremaining)){
-			priorFracWremainingUse <- priorFracWremaining
-		}else{
-			priorFracWremainingUse <- priorFracWremaining[[match(gmaxvalsInd[i], unique(gmaxvalsInd))]]
-		}
-		## ## this code is for debugging only ###
-		## #newsp=split(useM[,i],priorFracWremainingUse[chr %in% samplechr])
-		## ### this is no good, change back to the mean ###
-		## #correctionVals=sapply(newsp,function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));})
-		## #correctionVals=sapply(newsp,mean)#function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));})
-		## #names(correctionVals)=names(newsp)
-		## ## verify correct TV ##
-		## #fsampled=sum(useM[,i]);
-		## #n=nrow(useM)
-		## #lambda=fsampled/n
-		## #ngc=sapply(newsp,length)
-		## #tvscore=sum(ngc/n * (abs(correctionVals-lambda)))
-		## #print(paste('i is now',i,'tv score is',tvscore))
-		## ## end debugging code
-		##
 		## Lets Try to Remove Large CNVs Before Calculating the Corrections, otherwise they will Interfere
 		cm <- cumsum(Ms[, i])
 		cm2 <- cm[200:length(cm)] - c(0, cm[seq_len(length(cm)-200)])
@@ -121,7 +86,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		##
 		newTVscore <- vector()
 		for(tvind in seq_len(nrow(tvScore))){
-			priorFrac <- priorFracs(gcFracBoth, tvind, nparts, tvScore, increm, increm2)
+			priorFrac <- priorFracs(gcFracBoth, tvind, nparts, tvScore, increms)
 			newTVscore[tvind] <- correctionTVscore(correctedM[chr %in% samplechr], priorFrac, i, as.numeric(rownames(tvScore)[tvind]))
 		}
 		names(newTVscore) <- rownames(tvScore)

@@ -1,19 +1,15 @@
 calctvScore <-
-function(gcFracBoth,samplechr,nparts,useM,narrays,increm,increm2, verbose=FALSE){
+function(gcFracBoth,samplechr,nparts,useM,narrays,increms, verbose=FALSE){
 
 narrays=ncol(useM)
 
 ### the order of row binding is forward first half, forward second half, reverse first half, reverse second half
 
 
-  tvScorepart=foreach(i=1:2, .combine='rbind', .packages="ArrayTV")%dopar% {
-  if(i==1){
-  partitionedgcFrac=gcFracBoth[,1]#[[1]]  ### GC WINDOWS MOVING IN FORWARD DIRECTION
-  #priorpartitionedgcFrac=gcFracBoth[,2]#[[2]]  ### GC WINDOWS MOVING IN REVERSE DIRECTION
-}else{
-  partitionedgcFrac=gcFracBoth[,2]#[[1]]  ### GC WINDOWS MOVING IN FORWARD DIRECTION
-  #priorpartitionedgcFrac=gcFracBoth[,4]#[[2]]  ### GC WINDOWS MOVING IN REVERSE DIRECTION
-}
+  tvScorepart=foreach(i=1:ncol(gcFracBoth), .combine='rbind', .packages="ArrayTV")%dopar% {
+
+      partitionedgcFrac=gcFracBoth[,i]
+
   tvScorepart=matrix(0,nrow=nparts,ncol=narrays)
 
 ### maxwin/increm * 2 must be divisible by 4 right now
@@ -56,7 +52,7 @@ narrays=ncol(useM)
 }else{
   tvscore=rowSums(rep((ngc/n),each=narrays)*(abs(toplot-lambda)))
 }
-  if(verbose) print(paste('windows stretch',ifelse(i==1,hh*increm,hh*increm2),'bp from probes, TV:', round(tvscore,4)))
+  if(verbose) print(paste('windows stretch',increms[i]*hh,'bp from probes, TV:', round(tvscore,4)))
   tvScorepart[hh,]=na.omit(tvscore)
 
 }
