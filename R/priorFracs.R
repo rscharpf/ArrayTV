@@ -1,9 +1,9 @@
 priorFracs <- function(gcFracBoth, maxuse, nparts, tvScore, increm, increm2){
 	offset <- as.numeric(rownames(tvScore)[maxuse])/ifelse(maxuse>nrow(tvScore)/2,increm2,increm)
-	if(maxuse > nrow(tvScore)/2)
+	if(maxuse > nrow(tvScore)/2){
 		## Bigger Increment Windows are better
 		priorGC <- gcFracBoth[, 2]
-	else{
+	}else{
 		## Smaller Increment Windows are better
 		priorGC <- gcFracBoth[, 1]
 	}

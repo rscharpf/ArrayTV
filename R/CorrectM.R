@@ -44,7 +44,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		## #tvscore=sum(ngc/n * (abs(correctionVals-lambda)))
 		## #print(paste('i is now',i,'tv score is',tvscore))
 		## ## end debugging code
-
+		##
 		## Lets Try to Remove Large CNVs Before Calculating the Corrections, otherwise they will Interfere
 		cm <- cumsum(Ms[, i])
 		cm2 <- cm[200:length(cm)] - c(0, cm[seq_len(length(cm)-200)])
@@ -65,13 +65,13 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		chromMeans <- aggregate(markrep, list(chromrep), mean)
 		segment.smoothed.CNA.object$output$chromMean <- chromMeans$x[match(segment.smoothed.CNA.object$output$chrom,chromMeans$Group.1)]
 		toremove <- which(abs(segment.smoothed.CNA.object$output$seg.mean - segment.smoothed.CNA.object$output$chromMean) > maduse & segment.smoothed.CNA.object$output$chrom %in% multiblock & ( segment.smoothed.CNA.object$output$seg.mean > meduse + (maduse*2.5) | segment.smoothed.CNA.object$output$seg.mean < meduse - (maduse*2.5 )))
-
+		##
 		locsAsRange <- GRanges(seqnames=chr, ranges=IRanges(start=starts, width=1))
 		removestart <- segment.smoothed.CNA.object$output$loc.start[toremove]
 		removeend <- segment.smoothed.CNA.object$output$loc.end[toremove]
 		removechr <- segment.smoothed.CNA.object$output$chrom[toremove]
 		removeAsRange <- GRanges(seqnames=removechr, ranges=IRanges(start=removestart, end=removeend))
-
+		##
 		tokeepLogical <- is.na(GenomicRanges::match(locsAsRange, removeAsRange))
 		tokeep <- which(tokeepLogical)
 		toremove <- which(!tokeepLogical)
@@ -79,31 +79,31 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 			tokeep <- seq_along(tokeepLogical)
 			toremove <- numeric()
 		}
-
+		##
 		## calculate new TV, We only used a sample of the data to get the best window but we will use all the data to get correction values  ##
 		newsp <- split(Ms[tokeep, i], paste(chr[tokeep], priorFracWremainingUse[tokeep], sep='.'))
-
+		##
 		## this will be only for CNVs that are removed initially and will not be able to match on chr and gc Frac
 		correctionVals <- sapply(newsp, mean)
 		## correctionVals=sapply(newsp,function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));})
 		names(correctionVals) <- names(newsp)
 		fsampled <- sum(Ms[tokeep, i]);
-
+		##
 		n <- length(tokeep)
 		lambda <- fsampled/n
 		ngc <- sapply(newsp, length)
 		tvscore <- sum(ngc/n * (abs(correctionVals - lambda)))
 		if(verbose) print(paste('for array', i, 'tv score is', tvscore, 'when correction is applied to each chromosome'))
-
+		##
 		allcorrections <- vector()
 		allcorrections[tokeep] <- correctionVals[match(paste(chr[tokeep], priorFracWremainingUse[tokeep], sep='.'), (names(correctionVals)))]
 		allcorrections[toremove] <- correctionVals[match(paste(chr[toremove], priorFracWremainingUse[toremove], sep='.'), (names(correctionVals)))]
 		## this should retain information
-
+		##
 		if(verbose) print(paste('we removed', length(toremove), 'locations before calculating correction values'))
 		if(verbose) print(paste(length(which(is.na(allcorrections[toremove]))), 'point(s) for array', i, 'will recieve no gc correction'))
 		allcorrections[toremove][which(is.na(allcorrections[toremove]))] <- lambda
-
+		##
 		## IF WE INCREASE THE SPREAD OF OUR CORRECTIONS DOES THE AUTOCORRELATION IMPROVE? ###
 		if(jittercorrection){
 			cnr <- 1
@@ -118,24 +118,24 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		}else mfact <- 1
 		chromMediansAll <- aggregate(Ms[,i], list(chr), median)
 		correctedM <- chromMediansAll$x[match(chr, chromMediansAll$Group.1)] + Ms[, i] - allcorrections*mfact
-
+		##
 		newTVscore <- vector()
 		for(tvind in seq_along(tvScore)){
 			priorFrac <- priorFracs(gcFracBoth, tvind, nparts, tvScore, increm, increm2)
 			newTVscore[tvind] <- correctionTVscore(correctedM[chr %in% samplechr], priorFrac, i, as.numeric(rownames(tvScore)[tvind]))
 		}
 		names(newTVscore) <- rownames(tvScore)
-
+		##
 		if(length(which(is.na(correctedM))) > 0){
 			if(verbose) print(priorFracWremaining[is.na(correctedM)][1:20])
 		}
-
-		## comparison metrics
-		if(verbose) print(paste('mad of corrected array',i,'is',mad(correctedM)))
-		if(verbose) print(paste('old mad array',i,'is',mad(Ms[,i])))
-		if(verbose) print(paste('The new Maximum tv Score for array',i,'is',max(newTVscore),'in window',names(newTVscore)[which.max(newTVscore)],'bp'))
 		##
-
+		## comparison metrics
+		if(verbose) print(paste('mad of corrected array', i, 'is', mad(correctedM)))
+		if(verbose) print(paste('old mad array', i, 'is', mad(Ms[, i])))
+		if(verbose) print(paste('The new Maximum tv Score for array', i, 'is', max(newTVscore), 'in window', names(newTVscore)[which.max(newTVscore)], 'bp'))
+		##
+		##
 		## for(ii in unique(chr)){plot(Ms[chr==ii],ylim=c(-.8,.8));plot(correctedM[chr==ii],ylim=c(-.8,.8));readline('')}
 		as(correctedM, "matrix")
 	}
