@@ -79,6 +79,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 			tokeep <- seq_along(tokeepLogical)
 			toremove <- numeric()
 		}
+		browser()
 		##
 		## calculate new TV, We only used a sample of the data to get the best window but we will use all the data to get correction values  ##
 		newsp <- split(Ms[tokeep, i], paste(chr[tokeep], priorFracWremainingUse[tokeep], sep='.'))
@@ -87,7 +88,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		correctionVals <- sapply(newsp, mean)
 		## correctionVals=sapply(newsp,function(x){x1=median(x);x2=1.5*mad(x);z=x[x<(x1+x2) & x>(x1-x2)];ifelse(length(z)>0,mean(z),mean(x));})
 		names(correctionVals) <- names(newsp)
-		fsampled <- sum(Ms[tokeep, i]);
+		fsampled <- sum(Ms[tokeep, i])
 		##
 		n <- length(tokeep)
 		lambda <- fsampled/n
@@ -120,7 +121,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 		correctedM <- chromMediansAll$x[match(chr, chromMediansAll$Group.1)] + Ms[, i] - allcorrections*mfact
 		##
 		newTVscore <- vector()
-		for(tvind in seq_along(tvScore)){
+		for(tvind in seq_len(nrow(tvScore))){
 			priorFrac <- priorFracs(gcFracBoth, tvind, nparts, tvScore, increm, increm2)
 			newTVscore[tvind] <- correctionTVscore(correctedM[chr %in% samplechr], priorFrac, i, as.numeric(rownames(tvScore)[tvind]))
 		}

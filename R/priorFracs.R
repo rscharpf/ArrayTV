@@ -11,4 +11,4 @@ priorFracs <- function(gcFracBoth, maxuse, nparts, tvScore, increm, increm2){
 	priorFrac <- (cumsum(priorGC)[offset:length(priorGC)] - c(0, cumsum(priorGC)[1:(length(priorGC)-offset)]))[seq(1, (length(priorGC)-offset + 1), nparts)]/offset
 	quants <- sort(unique(quantile(priorFrac, probs=seq(0, 1, .01))))
 	priorFrac <- quants[findInterval(priorFrac, quants)]
-  }
+}
