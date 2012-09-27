@@ -1,116 +1,154 @@
 \name{gcCorrectMain}
 \alias{gcCorrectMain}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{gcCorrectMain
-%%  ~~function to do ... ~~
+\title{
+gcCorrectMain
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Correct gc biases in array data. The user must provide a range of windows and this function will compute the tv score for each window and correct the arrays based upon the window with the highest tv score (i.e with window showing the most gc bias)
 }
 \usage{
-gcCorrectMain(Ms, chr, starts, samplechr, nodes, increms, maxwins, build)
+   function(Ms, chr, starts, samplechr, nodes, increms,
+                          maxwins, jittercorrection=FALSE,
+                          returnOnlyTV=FALSE, onlyGC=FALSE,providedGC=0,build, verbose=FALSE)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Ms}{
-%%     ~~Describe \code{Ms} here~~
+A matrix holding the array values
 }
   \item{chr}{
-%%     ~~Describe \code{chr} here~~
+a vector indicating the chromosome of each probe (should be the same length as the number of rows in the array matrix)
 }
   \item{starts}{
-%%     ~~Describe \code{starts} here~~
+a vector holding the genomic coordinates of the start positions the probes (should be the same length as the number of rows inthe array matrix)
 }
   \item{samplechr}{
-%%     ~~Describe \code{samplechr} here~~
+a subset (or the entire set) of the chromosomes represented in the arrays. The probes on these chromosomes will be used to compute the tvScore
 }
   \item{nodes}{
-%%     ~~Describe \code{nodes} here~~
+the number of cpus available (more cpus=faster results)
 }
   \item{increms}{
-%%     ~~Describe \code{increms} here~~
+a vector of integers
 }
   \item{maxwins}{
-%%     ~~Describe \code{maxwins} here~~
+a vector ofintegers with each value >= the corresponding value in increms. Corresponding values of maxwins and increms must have the same quotient. For instance, if increms is c(10,1000) then an acceptable value of maxwins would be(500,5000) because the quotients of the corresponding elements are both 5.
 }
-  \item{build}{
-%%     ~~Describe \code{build} here~~
+\item{jittercorrection}{
+if TRUE amplify the correction values by a small amount to decrease the autocorrelation of proximal probes
+}
+\item{returnOnlyTV}{
+if TRUE only return the tvScores rather than applying corrections
+}
+\item{onlyGC}{
+if TRUE return the gc fraction of each window (the result may be subsequently passed into the providedGC argument to be used in correction)
+}
+\item{providedGC}{
+a vector of gc values (fractions from zero to 1) to use for computing corrections. This should be the same length as the number of rows in the array, if provided
+}
+ \item{build}{
+the build matching the array. This is used to load the BSgenome object. If the arrays are annotated based on hg18 this would be 'hg18', if the annotation is based on hg19 this would be 'hg19'.
+}
+\item{verbose}{
+provide output throughout computation
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+see example
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+The default is to return corrected values for the arrays passed in. This result will have the same dimensions as the first argument (the uncorrected values).if returnOnlyTV is TRUE this will be a matrix of tv score values, one row per window, one column per array. The rownames of the matrix will indicate the size of the window. If onlyGC=TRUE the gc fraction of each window will be returned.
 }
 \references{
-%% ~put references to the literature/web site here ~
+Optimal window finding was inspired by a similar concept applied to gc correction for next generation sequencing experiments:Benjamini Y, Speed TP. Summarizing and correcting the GC content bias in high-throughput sequencing. Nucleic Acids Res 2012;40:e72
 }
 \author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+Eitan Halper-Stromberg
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+nim2.1rda=system.file("extdata","nim2.1example.rda",package="ArrayTV")
+load(nim2.1rda)
 
-## The function is currently defined as
-function (Ms, chr, starts, samplechr, nodes, increms, maxwins, 
-    build) 
-{
-    do.call(library, list(paste("BSgenome.Hsapiens.UCSC.", build, 
-        sep = "")))
-    library("RColorBrewer")
-    library("multicore")
-    library("foreach")
-    library("grDevices")
-    library("doMC")
-    library("DNAcopy")
-    registerDoMC(nodes)
-    uniqchrs = unique(chr)
-    remainingChr = uniqchrs[is.na(match(uniqchrs, samplechr))]
-    narrays = ncol(Ms)
-    increm = increms[1]
-    increm2 = increms[2]
-    maxwin = maxwins[1]
-    maxwin2 = maxwins[2]
-    nparts = (maxwin/increm)
-    if (nparts != maxwin2/increm2) {
-        readline("Bad Increment Values")
-    }
-    strategyuse = 2
-    gcFracBoth = gcFracAllWin(maxwin, maxwin2, increm, increm2, 
-        chr, starts, samplechr, uniqchrs, strategyuse)
-    useM = as(Ms[chr \%in\% samplechr, ], "matrix")
-    tvScore = calctvScore(gcFracBoth, samplechr, nparts, useM, 
-        narrays, increm, increm2)
-    rownames(tvScore) = c(seq(increm, maxwin, increm), seq(increm2, 
-        maxwin2, increm2))
-    maxTVscores = rep(0, narrays)
-    correctionVals = list()
-    optWins = rep(0, narrays)
-    gmaxvals = apply(tvScore, 2, max)
-    gmaxvalsInd = apply(tvScore, 2, which.max)
-    correctedM = CorrectM(gcFracBoth, useM, Ms, starts, narrays, 
-        nparts, chr, samplechr, remainingChr, increm, increm2, 
-        gmaxvals, gmaxvalsInd, tvScore)
-    return(correctedM)
-  }
+starts=loc-29.5 ## We want our start locations to be at the beginning of the probe, not in the middle of the probe
+samplechr=c('chr14','chr15')
+increms=c(10,1000,100e3)
+wins=c(100,10e3,1e6)
+nodes=2
+tvScores=gcCorrectMain(Ms,chr, starts,samplechr,nodes,increms,wins,
+jittercorrection=FALSE,returnOnlyTV=TRUE,onlyGC=FALSE,providedGC=0,'hg18',verbose=TRUE)
+
+tvScoresSplit=split(data.frame(tvScores),rep(1:3,each=10))
+
+print(tvScoresSplit)
+
+dev.new()
+par(mfrow=c(1,3))
+for(ii in 1:3){
+    plot(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,1],col='blue',ylim=c(0,max(tvScoresSplit[[ii]])),xlab='window extension from center',
+         ylab='tv score')
+    points(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,2],col='red')
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+### Now correct TVs based on best: we'll do it twice with one medium sized window (9000) and one large window (600,000)
+
+cM1=gcCorrectMain(Ms,chr,starts,samplechr,nodes,6e5,6e5,
+jittercorrection=FALSE,returnOnlyTV=FALSE,onlyGC=FALSE,providedGC=0,'hg18')
+
+cM2=gcCorrectMain(cM1,chr,starts,samplechr,nodes,9e3,9e3,
+jittercorrection=FALSE,returnOnlyTV=FALSE,onlyGC=FALSE,providedGC=0,'hg18')
+
+
+### view results Whole Chromosome 14
+dev.new()
+par(mfrow=c(2,1))
+## first array
+plot(starts[chr=='chr14'],Ms[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Uncorrected',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr14'],cM2[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Corrected',xlab='position',ylab='Signal intensity')
+dev.new()
+par(mfrow=c(2,1))
+## second array
+plot(starts[chr=='chr14'],Ms[chr=='chr14',2],ylim=c(-.7,.7),main='Array 2 Uncorrected',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr14'],cM2[chr=='chr14',2],ylim=c(-.7,.7),main='Array 2 Corrected',xlab='position',ylab='Signal intensity')
+
+
+## view cbs line through a spike in (expected copy number 2.5)
+cnaGR1=list();cnaGR2=list()
+for(ii in 1:2){
+    MsUse=get(c('Ms','cM2')[ii])
+cna1=CNA(MsUse,chr,starts,data.type="logratio",sampleid=c(1,2))
+smoothcna1=smooth.CNA(cna1)
+segment.smoothed.CNA.object=segment(smoothcna1,verbose=1)
+cnaGR=GRanges(seqnames=as.character(segment.smoothed.CNA.object$output$chrom),ranges=IRanges(start=segment.smoothed.CNA.object$output$loc.start,
+end=segment.smoothed.CNA.object$output$loc.end))
+ind1=which(as.character(segment.smoothed.CNA.object$output$ID)=='X1')
+ind2=which(as.character(segment.smoothed.CNA.object$output$ID)=='X2')
+cnaGR1[[ii]]=cnaGR[ind1]
+cnaGR2[[ii]]=cnaGR[ind2]
+
+elementMetadata(cnaGR1[[ii]])=segment.smoothed.CNA.object$output$seg.mean[ind1]
+elementMetadata(cnaGR2[[ii]])=segment.smoothed.CNA.object$output$seg.mean[ind2]
+}
+
+## Plot Region near Spike In, the SpikeIn may be seen in the middle of the window as a small amplification
+for(ii in 1:2){
+    cnaGRuse=get(c('cnaGR1','cnaGR2')[ii])
+dev.new()
+par(mfrow=c(2,1))
+spikeinStart=45396506;spikeinEnd=45537976
+## uncorrected near spike in
+plot(starts[chr=='chr15' & starts>(spikeinStart-3e6) & starts<(spikeinEnd+3e6)],
+            Ms[chr=='chr15' & starts>(spikeinStart-3e6) & starts<(spikeinEnd+3e6),ii],
+     main=paste('Uncorrected Array',ii), xlab='position',ylab='signal intensity',ylim=c(-.7,.5))
+cbsXs=as.vector(rbind(start(cnaGRuse[[1]][seqnames(cnaGRuse[[1]])=='chr15']),end(cnaGRuse[[1]][seqnames(cnaGRuse[[1]])=='chr15']),NA))
+cbsYs=rep(elementMetadata(cnaGRuse[[1]])[seqnames(cnaGRuse[[1]])=='chr15',1],each=3)
+points(cbsXs,cbsYs,col='red',type='l')
+## corrected near spikein
+plot(starts[chr=='chr15' & starts>(spikeinStart-3e6) & starts<(spikeinEnd+3e6)],
+            cM2[chr=='chr15' & starts>(spikeinStart-3e6) & starts<(spikeinEnd+3e6),ii],
+     main=paste('Corrected Array',ii),xlab='position',ylab='signal intensity',ylim=c(-.7,.5))
+cbsXs=as.vector(rbind(start(cnaGRuse[[2]][seqnames(cnaGRuse[[2]])=='chr15']),end(cnaGRuse[[2]][seqnames(cnaGRuse[[2]])=='chr15']),NA))
+cbsYs=rep(elementMetadata(cnaGRuse[[2]])[seqnames(cnaGRuse[[2]])=='chr15',1],each=3)
+
+points(cbsXs,cbsYs,col='red',type='l')
+}
+}

@@ -1,5 +1,4 @@
-nim2.1rda=system.file("extdata","nim2.1example.rda",package="ArrayTV")
-load(nim2.1rda)
+load('inst/nim2.1example.rda')
 
 starts=loc-29.5 ## We want our start locations to be at the beginning of the probe, not in the middle of the probe
 samplechr=c('chr14','chr15')
