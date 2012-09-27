@@ -5,7 +5,8 @@ starts=loc-29.5 ## We want our start locations to be at the beginning of the pro
 samplechr=c('chr14','chr15')
 increms=c(10,1000,100e3)
 wins=c(100,10e3,1e6)
-nodes=2
+nodes=readline('How many cpus do you have available? (Enter the number)')
+registerDoMC(nodes)
 tvScores=gcCorrectMain(Ms,chr, starts,samplechr,nodes,increms,wins,
 jittercorrection=FALSE,returnOnlyTV=TRUE,onlyGC=FALSE,providedGC=0,'hg18',verbose=TRUE)
 
