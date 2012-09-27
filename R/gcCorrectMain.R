@@ -61,3 +61,5 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes, increms,
 	}
 	return(result)
 }
+
+

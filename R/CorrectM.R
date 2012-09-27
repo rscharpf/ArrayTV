@@ -24,7 +24,7 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 	}
 
 
-	correctedM <- foreach(i=seq_along(narrays), .combine='cbind', .packages="ArrayTV") %dopar% {
+	correctedM <- foreach(i=seq_len(narrays), .combine='cbind', .packages="ArrayTV") %dopar% {
 		if(narrays==1 | !is.list(priorFracWremaining)){
 			priorFracWremainingUse <- priorFracWremaining
 		}else{
