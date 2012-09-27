@@ -79,7 +79,6 @@ CorrectM <- function(gcFracBoth, useM, Ms, starts, narrays, nparts, chr,
 			tokeep <- seq_along(tokeepLogical)
 			toremove <- numeric()
 		}
-		browser()
 		##
 		## calculate new TV, We only used a sample of the data to get the best window but we will use all the data to get correction values  ##
 		newsp <- split(Ms[tokeep, i], paste(chr[tokeep], priorFracWremainingUse[tokeep], sep='.'))
