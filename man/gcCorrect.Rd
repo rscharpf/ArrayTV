@@ -50,7 +50,7 @@ initnodes=1
 nodes=as.numeric(readline('How many cpus do you have available? (Enter the number)'))
 nodes=max(c(initnodes,nodes),na.rm=TRUE)
 if(nodes>1){
-library(registerDoMC)
+library(doMC)
 registerDoMC(nodes)
 }
 tvScores=gcCorrect(Ms,chr, starts,samplechr,nodes,increms,wins,

@@ -1,6 +1,7 @@
 getGCinBestWindowGenome <-
     function(gcFracBoth,starts,nparts,chr,samplechr,remainingChr,increms,gmaxvals,gmaxvalsInd,tvScore,verbose=FALSE){
-    priorFracWremaining=foreach(i=which(!duplicated(gmaxvalsInd)), .combine='list',.multicombine=T)%dopar% {
+        i <- NULL
+        priorFracWremaining=foreach(i=which(!duplicated(gmaxvalsInd)), .combine='list',.multicombine=T)%dopar% {
 
         if(verbose) print(paste('A maximum first pass  TV is',gmaxvals[i],'in window',rownames(tvScore)[gmaxvalsInd[i]]))
 

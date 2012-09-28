@@ -1,6 +1,6 @@
 CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,userProvidedGC=F,gmaxvalsInd=0,jittercorrection=F,
                      tvScore,gcFracBoth,nparts,samplechr,increms, verbose=FALSE){
-
+    i <- NULL
     correctedM=foreach(i=1:narrays, .combine='cbind')%dopar% {
 
         if(narrays==1 | !is.list(priorFracWremaining)){

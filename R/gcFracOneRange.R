@@ -1,7 +1,7 @@
 gcFracOneRange<-function(schr,starts,increm,maxwin,verbose=FALSE){
 
     if(verbose) print('Getting gc content From BS genome Object')
-
+    Hsapiens <- get("Hsapiens")
     pregcFrac=letterFrequencyInSlidingView(unmasked(Hsapiens[[schr]]),view.width=increm,'CG',as.prob=T)
 
 
