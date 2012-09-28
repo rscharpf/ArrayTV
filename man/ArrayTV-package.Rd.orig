@@ -1,0 +1,64 @@
+\name{ArrayTV-package}
+\alias{ArrayTV-package}
+\alias{ArrayTV}
+\docType{package}
+\title{
+<<<<<<< HEAD
+ArrayTV-implementation of GC correction for arrays
+}
+\description{
+Correct gc biases in array data. The user must provide a range of windows and this function will compute the tv score for each window and correct the arrays based upon the window with the highest tv score (i.e with window showing the most gc bias)
+=======
+What the package does (short line)
+~~ package title ~~
+}
+\description{
+More about what it does (maybe more than one line)
+~~ A concise (1-5 lines) description of the package ~~
+>>>>>>> c21d6edad5fac3068e4fb058b5d3074c01cfe64d
+}
+\details{
+\tabular{ll}{
+Package: \tab ArrayTV\cr
+Type: \tab Package\cr
+Version: \tab 1.0\cr
+Date: \tab 2012-08-02\cr
+<<<<<<< HEAD
+License: \tab Johsn Hopkins School of Medicine\cr
+=======
+License: \tab What license is it under?\cr
+>>>>>>> c21d6edad5fac3068e4fb058b5d3074c01cfe64d
+}
+~~ An overview of how to use the package, including the most important ~~
+~~ functions ~~
+}
+\author{
+<<<<<<< HEAD
+Eitan Halper-Stromberg
+Maintainer: Eitan Halper-Stromberg
+=======
+Who wrote it
+
+Maintainer: Who to complain to <yourfault@somewhere.net>
+~~ The author and/or maintainer of the package ~~
+>>>>>>> c21d6edad5fac3068e4fb058b5d3074c01cfe64d
+}
+\references{
+~~ Literature or other references for background information ~~
+}
+<<<<<<< HEAD
+\keyword{ package }
+\seealso{
+type ?gcCorrectMain.Rd at the command prompt for an example
+=======
+~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
+~~ the R documentation directory ~~
+\keyword{ package }
+\seealso{
+~~ Optional links to other man pages, e.g. ~~
+~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
+}
+\examples{
+~~ simple examples of the most important functions ~~
+>>>>>>> c21d6edad5fac3068e4fb058b5d3074c01cfe64d
+}
