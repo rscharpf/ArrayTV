@@ -39,13 +39,26 @@ jittercorrection=FALSE,returnOnlyTV=FALSE,onlyGC=FALSE,providedGC=0,'hg18')
 dev.new()
 par(mfrow=c(2,1))
 ## first array
-plot(starts[chr=='chr14'],Ms[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Uncorrected',xlab='position',ylab='Signal intensity')
-plot(starts[chr=='chr14'],cM2[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Corrected',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr14'],Ms[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Uncorrected chr14',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr14'],cM2[chr=='chr14',1],ylim=c(-.7,.7),main='Array 1 Corrected chr14',xlab='position',ylab='Signal intensity')
 dev.new()
 par(mfrow=c(2,1))
 ## second array
 plot(starts[chr=='chr14'],Ms[chr=='chr14',2],ylim=c(-.7,.7),main='Array 2 Uncorrected',xlab='position',ylab='Signal intensity')
 plot(starts[chr=='chr14'],cM2[chr=='chr14',2],ylim=c(-.7,.7),main='Array 2 Corrected',xlab='position',ylab='Signal intensity')
+
+### view Whole Chromosome 15
+dev.new()
+par(mfrow=c(2,1))
+## first array
+plot(starts[chr=='chr15'],Ms[chr=='chr15',1],ylim=c(-.7,.7),main='Array 1 Uncorrected chr15',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr15'],cM2[chr=='chr15',1],ylim=c(-.7,.7),main='Array 1 Corrected chr15',xlab='position',ylab='Signal intensity')
+dev.new()
+par(mfrow=c(2,1))
+## second array
+plot(starts[chr=='chr15'],Ms[chr=='chr15',2],ylim=c(-.7,.7),main='Array 2 Uncorrected',xlab='position',ylab='Signal intensity')
+plot(starts[chr=='chr15'],cM2[chr=='chr15',2],ylim=c(-.7,.7),main='Array 2 Corrected',xlab='position',ylab='Signal intensity')
+
 
 
 ## view cbs line through a spike in (expected copy number 2.5)
