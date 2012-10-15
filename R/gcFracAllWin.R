@@ -41,7 +41,7 @@ gcFracAllWin <- function(maxwins, increms,
 
                 if(verbose) print('Getting gc content From BS genome Object')
                 maxwinuse <- maxwins[which(increms==incremuse)]
-                gcFrac <- as.matrix(gcFracOneRange(schr,starts,incremuse,maxwinuse,verbose))
+                gcFrac <- as.matrix(ArrayTV:::gcFracOneRange(schr,starts,incremuse,maxwinuse,verbose))
             } ## end strategy 2
             gcFrac
 	} ## end foreach statement

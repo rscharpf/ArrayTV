@@ -1,14 +1,15 @@
-CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,userProvidedGC=F,gmaxvalsInd=0,jittercorrection=F,
-                     tvScore,gcFracBoth,nparts,samplechr,increms, verbose=FALSE){
-    i <- NULL
-    correctedM=foreach(i=1:narrays, .combine='cbind')%dopar% {
-
-        if(narrays==1 | !is.list(priorFracWremaining)){
-            priorFracWremainingUse=priorFracWremaining
-        }else{
-            priorFracWremainingUse=priorFracWremaining[[match(gmaxvalsInd[i],unique(gmaxvalsInd))]]
-        }
-
+CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,
+		     userProvidedGC=FALSE,gmaxvalsInd=0,
+		     jittercorrection=FALSE,
+                     tvScore,gcFracBoth,nparts,
+		     samplechr,increms, verbose=FALSE){
+	i <- NULL
+	correctedM <- foreach(i=1:narrays, .combine='cbind', .packages="ArrayTV")%dopar% {
+		if(narrays==1 | !is.list(priorFracWremaining)){
+			priorFracWremainingUse <- priorFracWremaining
+		}else{
+			priorFracWremainingUse <- priorFracWremaining[[match(gmaxvalsInd[i],unique(gmaxvalsInd))]]
+		}
 
 		## Lets Try to Remove Large CNVs Before Calculating the Corrections, otherwise they will Interfere
 		cm <- cumsum(Ms[, i])
@@ -86,8 +87,8 @@ CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,userProvidedGC=F,
 		##
 		newTVscore <- vector()
 		for(tvind in seq_len(nrow(tvScore))){
-			priorFrac <- priorFracs(gcFracBoth, tvind, nparts, tvScore, increms)
-			newTVscore[tvind] <- correctionTVscore(correctedM[chr %in% samplechr], priorFrac, i, as.numeric(rownames(tvScore)[tvind]))
+			priorFrac <- ArrayTV:::priorFracs(gcFracBoth, tvind, nparts, tvScore, increms)
+			newTVscore[tvind] <- ArrayTV:::correctionTVscore(correctedM[chr %in% samplechr], priorFrac, i, as.numeric(rownames(tvScore)[tvind]))
 		}
 		names(newTVscore) <- rownames(tvScore)
 		##
