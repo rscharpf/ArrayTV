@@ -1,5 +1,5 @@
 Package: ArrayTV
-Version: 1.1.14
+Version: 1.1.15
 Title: Implementation of wave correction for arrays
 Date: 2012-07-09
 Author: Eitan Halper-Stromberg
@@ -10,5 +10,16 @@ LazyLoad: yes
 Depends: R (>= 2.14), foreach, DNAcopy, GenomicRanges, Biostrings, BSgenome, methods
 Imports: grDevices
 Suggests: RColorBrewer, doMC
+Collate: AllGenerics.R
+         calctvScore.R
+         correctionTVscore.R
+         CorrectM.R
+	 gcCorrectMain.R
+	 gcFracAllWin.R
+	 gcFracOneRange.R
+	 getGCinBestWindowGenome.R
+	 methods-gcCorrect.R
+	 priorFracs.R
+	 priorFracsRestOfGenome.R
 Enhances: doMC
 biocViews:

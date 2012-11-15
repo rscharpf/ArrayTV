@@ -1,0 +1,83 @@
+%\VignetteIndexEntry{ArrayTV Vignette}
+%\VignetteKeywords{copy number}
+%\VignettePackage{ArrayTV}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[numbers]{natbib}
+\usepackage{color}
+\usepackage[margin=1in]{geometry}
+
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rfunction}[1]{\texttt{#1}}
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rclass}[1]{\texttt{#1}}
+\newcommand{\R}{\textsf{R}}
+
+\begin{document}
+\title{A package for wave correction}
+\author{Eitan}
+\maketitle
+
+\begin{document}
+
+
+<<setup, echo=FALSE>>=
+options(width=70)
+@
+
+\begin{abstract}
+  Overview of what this package does.
+\end{abstract}
+
+
+\section{Simple Usage}
+
+<<pkgs>>=
+library(ArrayTV)
+@
+
+- An example with a matrix
+
+- Default windows with the above matrix.  Plots of the TV score with the default windows.
+
+- Selecting different windows
+
+- Plot of the matrix before and after window selection
+
+
+\section{S4 Classes and methods}
+
+\subsection*{Nimblegen example}
+
+\subsection*{Affymetrix example}
+
+\subsection*{Illumina example}
+
+<<pkgs2>>=
+library(oligoClasses)
+library(VanillaICE)
+@
+
+An example with a more complicated data structure generated from the
+\Rpackage{crlmm} [ref].  Mention provenance of the data and how it was
+generated.
+
+<<>>=
+path <- system.file("extdata", package="ArrayTV")
+bset <- readRDS(file.path(path, "bsetChr9.rds"))
+@
+
+Mention how its bettter to do all chromosomes simultaneously, but here
+we're doing one chromosome to illustrate the methods.
+
+<<>>=
+plot(position(bset)/1e6, lrr(bset)/100, pch=".", ylim=c(-3, 1.5))
+@
+
+c
+
+
+\end{document}

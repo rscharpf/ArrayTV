@@ -13,7 +13,7 @@ getGCinBestWindowGenome <- function(gcFracBoth, starts, nparts,
 		priorFrac <- ArrayTV:::priorFracs(gcFracBoth,maxuse1,nparts,tvScore,increms)
 
 		if(length(remainingChr)==0){
-			priorFracWremaining=priorFrac
+			priorFracWremaining <- priorFrac
 		}else{
 			## Get GC for locations from non-sampled regions of genome
 			forwardExtend <- as.numeric(rownames(tvScore)[maxuse1])

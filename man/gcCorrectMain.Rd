@@ -66,7 +66,7 @@ Optimal window finding was inspired by a similar concept applied to gc correctio
 Eitan Halper-Stromberg
 }
 \examples{
-nim2.1rda=system.file("extdata","nim2.1example.rda",package="ArrayTV")
+nim2.1rda <- system.file("extdata","nim2.1example.rda",package="ArrayTV")
 load(nim2.1rda)
 
 starts=loc-29.5 ## We want our start locations to be at the beginning of the probe, not in the middle of the probe
