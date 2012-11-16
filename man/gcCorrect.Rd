@@ -13,7 +13,7 @@ gcCorrect(object, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{
-The array data 
+The array data
 }
   \item{\dots}{
 all other arguments needed by gcCorrectMain
@@ -23,9 +23,14 @@ all other arguments needed by gcCorrectMain
 see gcCorrectMain
 }
 \value{
+
 The default is to return corrected values for the arrays passed in. This
 result will have the same dimensions as the first argument (the
-uncorrected values).if returnOnlyTV is TRUE this will be a matrix of tv score values, one row per window, one column per array. The rownames of the matrix will indicate the size of the window. If onlyGC=TRUE the gc fraction of each window will be returned.
+uncorrected values).if returnOnlyTV is TRUE this will be a matrix of tv
+score values, one row per window, one column per array. The rownames of
+the matrix will indicate the size of the window. If onlyGC=TRUE the gc
+fraction of each window will be returned.
+
 }
 \references{
   Benjamini Y, Speed TP. Summarizing and cor\

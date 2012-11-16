@@ -25,7 +25,9 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 
 		nparts <- maxwins[1] / increms[1]
 		for(ii in seq_along(increms)){
-			if(nparts != maxwins[ii]/increms[ii]){readline('Bad Increment Values')}
+			## Eitan: why not stop("Bad increment values") ?
+			##if(nparts != maxwins[ii]/increms[ii]){readline('Bad Increment Values')}
+			if(nparts != maxwins[ii]/increms[ii]) stop("maxwins/increms must have a single unique value")
 		}
 
 		strategyuse <- 2
