@@ -84,8 +84,9 @@ we're doing one chromosome to illustrate the methods.
 %@
 
 We should be able to find a better example than this.
+added some text
 
-<<wavecorrection>>=
+<<wavecorrection, eval=FALSE>>=
 bset.gc <- gcCorrect(bset, increms=c(100, 10000), maxwins=c(1000, 100e3))
 @
 
