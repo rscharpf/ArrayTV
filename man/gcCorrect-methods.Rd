@@ -13,8 +13,7 @@
 \section{Methods}{
   \describe{
 
-    \item{\code{signature(object = "BafLrrSetList")}}{
-      \item{}{\code{gcCorrect(object, ...)}:
+    \item{}{\code{gcCorrect(object, ...)}:
 
       Objects of class \code{BafLrrSetList} are containers for log R
       ratios and B allele frequencies (BAFs) stored by chromosome.  In
@@ -76,8 +75,8 @@
       the \code{...} operator.  An object of class \code{matrix} with
       corrected values are returned.
 
-}
-}
+    }
+  }
 }
 
 \seealso{\code{\linkS4class{BeadStudioSet}},
