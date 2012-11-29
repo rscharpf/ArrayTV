@@ -71,6 +71,8 @@
 
     \item{}{\code{gcCorrect(object,  ....)}:
 
+      Object of class \code{matrix}.
+
       Additional arguments are passed to \code{gcCorrectMain} through
       the \code{...} operator.  An object of class \code{matrix} with
       corrected values are returned.

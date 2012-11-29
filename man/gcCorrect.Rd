@@ -47,7 +47,9 @@ gcCorrectMain
 nim2.1rda=system.file("extdata","nim2.1example.rda",package="ArrayTV")
 load(nim2.1rda)
 
-starts=loc-29.5 ## We want our start locations to be at the beginning of the probe, not in the middle of the probe
+starts=loc-29.5 ## We want our start locations to be at the beginning of
+the probe, not in the middle of the probe
+
 samplechr=c('chr14','chr15')
 increms=c(10,1000,100e3)
 wins=c(100,10e3,1e6)

@@ -42,17 +42,21 @@ setMethod("gcCorrect", signature(object="BeadStudioSet"),
 	  function(object, ...){
 		  gcCorrectBeadStudioSet(object, ...)
 	  })
+setMethod("gcCorrect", signature(object="BafLrrSet"),
+	  function(object, ...){
+		  gcCorrectBeadStudioSet(object, ...)
+	  })
 
 gcCorrectBafLrrList <- function(object, ...){
 	args <- list(...)
 	if("returnOnlyTV" %in% args){
-		is.score <- returnOnlyTV
-	} else is.score <- FALSE
+		return.score <- returnOnlyTV
+	} else return.score <- FALSE
 	r <- lrr(object)
 	index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
 	index.list <- splitIndicesByLength(index.samples, ocSamples())
-	if(is.score) score.list <- list()
+	if(return.score) score.list <- list()
 	for(i in seq_along(index.list)){
 		j <- index.list[[i]]
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
@@ -62,7 +66,7 @@ gcCorrectBafLrrList <- function(object, ...){
 		l <- sapply(fdl, nrow)
 		chr <- paste("chr", rep(chromosome(object), l), sep="")
 		pos <- unlist(position(object))
-		res <- gcCorrectMain(Ms=R, ##R[, 1, drop=FALSE],
+		res <- gcCorrectMain(Ms=as.matrix(R),
 				     chr=chr,
 				     starts=pos,
 				     samplechr=unique(chr),
@@ -70,14 +74,14 @@ gcCorrectBafLrrList <- function(object, ...){
 				     ...)
 		fns <- unlist(sapply(fdl, featureNames))
 		dimnames(res) <- list(fns, sampleNames(object)[j])
-		if(!is.score){  ## if not returning TV score, update the brList object
+		if(!return.score){  ## if not returning TV score, update the brList object
 			res <- integerMatrix(res, 100)
-			lrr(object) <- res
+			lrr(object) <- as.matrix(res)
 		} else {
 			score.list[[i]] <- res
 		}
 	}
-	if(is.score) {
+	if(return.score) {
 		results <- score.list
 	} else results <- object
 	return(results)

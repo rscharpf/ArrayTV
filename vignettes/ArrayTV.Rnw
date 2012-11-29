@@ -116,7 +116,7 @@ print(p)
 @
 
 <<sessionInfo,results=tex>>=
-
+toLatex(sessionInfo())
 @
 
 
