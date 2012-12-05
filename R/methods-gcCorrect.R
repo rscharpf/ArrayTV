@@ -53,6 +53,7 @@ gcCorrectBafLrrList <- function(object, ...){
 		return.score <- returnOnlyTV
 	} else return.score <- FALSE
 	r <- lrr(object)
+	isff <- is.ff(r[[1]])
 	index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
 	index.list <- splitIndicesByLength(index.samples, ocSamples())
@@ -76,7 +77,12 @@ gcCorrectBafLrrList <- function(object, ...){
 		dimnames(res) <- list(fns, sampleNames(object)[j])
 		if(!return.score){  ## if not returning TV score, update the brList object
 			res <- integerMatrix(res, 100)
-			lrr(object) <- as.matrix(res)
+			if(!isff){
+				## do not use lrr(object)[,j] -- the replacement method takes care of this
+				lrr(object) <- as.matrix(res)
+			} else {
+				## clone the matrix and then write to file
+			}
 		} else {
 			score.list[[i]] <- res
 		}
