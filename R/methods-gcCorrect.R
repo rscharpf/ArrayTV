@@ -47,14 +47,15 @@ setMethod("gcCorrect", signature(object="BafLrrSet"),
 		  gcCorrectBeadStudioSet(object, ...)
 	  })
 
-gcCorrectBafLrrList <- function(object, ...){
+gcCorrectBafLrrList <- function(object, index.samples, ...){
 	args <- list(...)
 	if("returnOnlyTV" %in% args){
 		return.score <- returnOnlyTV
 	} else return.score <- FALSE
 	r <- lrr(object)
 	isff <- is.ff(r[[1]])
-	index.samples <- seq_len(ncol(object[[1]]))
+	if(missing(index.samples))
+		index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
 	index.list <- splitIndicesByLength(index.samples, ocSamples())
 	if(return.score) score.list <- list()
@@ -77,12 +78,14 @@ gcCorrectBafLrrList <- function(object, ...){
 		dimnames(res) <- list(fns, sampleNames(object)[j])
 		if(!return.score){  ## if not returning TV score, update the brList object
 			res <- integerMatrix(res, 100)
-			if(!isff){
-				## do not use lrr(object)[,j] -- the replacement method takes care of this
-				lrr(object) <- as.matrix(res)
-			} else {
-				## clone the matrix and then write to file
-			}
+			lrr(object) <- as.matrix(res)
+##			if(!isff){
+##				## do not use lrr(object)[,j] -- the replacement method takes care of this
+##				lrr(object) <- as.matrix(res)
+##			} else {
+##				## clone the matrix and then write to file
+##				lrr(object) <- as.matrix(res)
+##			}
 		} else {
 			score.list[[i]] <- res
 		}
