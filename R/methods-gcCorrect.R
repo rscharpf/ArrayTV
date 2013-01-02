@@ -47,6 +47,8 @@ setMethod("gcCorrect", signature(object="BafLrrSet"),
 		  gcCorrectBeadStudioSet(object, ...)
 	  })
 
+
+
 gcCorrectBafLrrList <- function(object, index.samples, ...){
 	args <- list(...)
 	if("returnOnlyTV" %in% args){
@@ -58,28 +60,33 @@ gcCorrectBafLrrList <- function(object, index.samples, ...){
 		index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
 	index.list <- splitIndicesByLength(index.samples, ocSamples())
-	if(return.score) score.list <- list()
-	for(i in seq_along(index.list)){
-		j <- index.list[[i]]
+	##if(return.score) score.list <- list()
+	score.list <- foreach(j=index.list, .package=c("ff", "ArrayTV")) %dopar% {
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
 		R <- do.call(rbind, rr)
 		R[is.na(R)] <- 0 ## not ideal
-		fdl <- featureData(object)
-		l <- sapply(fdl, nrow)
+		##fdl <- featureData(object)
+		##l <- sapply(fdl, nrow)
+		l <- elementLengths(object)
 		chr <- paste("chr", rep(chromosome(object), l), sep="")
 		pos <- unlist(position(object))
-		res <- gcCorrectMain(Ms=as.matrix(R),
-				     chr=chr,
-				     starts=pos,
-				     samplechr=unique(chr),
-				     build=genomeBuild(object),
-				     ...)
-		fns <- unlist(sapply(fdl, featureNames))
-		dimnames(res) <- list(fns, sampleNames(object)[j])
-		if(!return.score){  ## if not returning TV score, update the brList object
-			res <- integerMatrix(res, 100)
-			lrr(object) <- as.matrix(res)
-##			if(!isff){
+		gcCorrectMain(Ms=as.matrix(R),
+			      chr=chr,
+			      starts=pos,
+			      samplechr=unique(chr),
+			      build=genomeBuild(object),
+			      ...)
+	}
+	##for(i in seq_along(index.list)){
+	##j <- index.list[[i]]
+	##fns <- unlist(sapply(fdl, featureNames))
+	if(!return.score){  ## if not returning TV score, update the brList object
+		fns <- unlist(featureNames(object))
+		sns <- sampleNames(object)[unlist(index.list)]
+		dimnames(res) <- list(fns, sns)
+		res <- integerMatrix(res, 100)
+		lrr(object) <- as.matrix(res)
+		##			if(!isff){
 ##				## do not use lrr(object)[,j] -- the replacement method takes care of this
 ##				lrr(object) <- as.matrix(res)
 ##			} else {
