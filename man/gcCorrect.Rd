@@ -151,6 +151,7 @@ cbsYs=rep(elementMetadata(cnaGRuse[[2]])[seqnames(cnaGRuse[[2]])=='chr15',1],eac
 
 points(cbsXs,cbsYs,col='red',type='l')
 }
+}
 
 
 
