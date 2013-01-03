@@ -1,5 +1,6 @@
 \name{gcCorrect-methods}
 \docType{methods}
+\alias{gcCorrect}
 \alias{gcCorrect-methods}
 \alias{gcCorrect,BafLrrSetList-method}
 \alias{gcCorrect,BeadStudioSet-method}
@@ -231,8 +232,8 @@ points(cbsXs,cbsYs,col='red',type='l')
 		## two windows for all the samples in a large study.
 		## Currently, our recommended approach is to first
 		## calculate the gc content for these windows:
-		gc.matrix <- ArrayTV:::computeGC(brList.copy, c(12, 10e3),
-						 c(12, 10e3))
+		gc.matrix <- computeGC(brList.copy, c(12, 10e3),
+				       c(12, 10e3))
 		## The number of columns in gc.matrix will correspond
 		## to the number of windows
 		ncol(gc.matrix)
