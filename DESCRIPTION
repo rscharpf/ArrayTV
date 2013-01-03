@@ -1,5 +1,5 @@
 Package: ArrayTV
-Version: 1.1.23
+Version: 1.1.24
 Title: Implementation of wave correction for arrays
 Date: 2012-07-09
 Author: Eitan Halper-Stromberg
@@ -13,6 +13,7 @@ Imports: grDevices
 Suggests: RColorBrewer, doMC
 Collate: AllGenerics.R
          calctvScore.R
+	 computeGC.R
          correctionTVscore.R
          CorrectM.R
 	 gcCorrectMain.R

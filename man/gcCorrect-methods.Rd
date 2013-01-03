@@ -200,4 +200,80 @@ cbsYs=rep(elementMetadata(cnaGRuse[[2]])[seqnames(cnaGRuse[[2]])=='chr15',1],eac
 
 points(cbsXs,cbsYs,col='red',type='l')
 }
+## Example using a list container (BafLrrSetList) containing log R
+## ratios and B allele frequencies
+\dontrun{
+	if(require(crlmm) && require(ff)){
+		data(cnSetExample, package="crlmm")
+		brList <- constructBafLrrSetListFrom(cnSetExample)
+		is(lrr(brList)[[1]], "ff_matrix")
+		rold <- lrr(brList)[[1]][, 1]/100
+		##
+		## To avoid having too much data in RAM it might be
+		## useful to process the samples n at a time
+		##
+		##  The number of samples to be processed at a time is
+		##  set by the ocSamples function.  For example, to
+		##  process 20 samples at a time one would do
+		ocSamples(20)
+		##
+		## When assay data elements are ff objects, the wave
+		## corrected values are updated on disk.  Currently,
+		## the  data is stored is here:
+		filename(lrr(brList)[[1]])
+		##
+		## To avoid permanently changing the log R ratio
+		## values for the brList object, we copy the ff files
+		## to a different path and create a new BafLrrSetList
+		## object.  This is done by the non-exported function
+		## "duplicateBLList". The path for the new ff objects
+		## is given by the function ldPath().  Here, we use a
+		## temp directory
+		ldPath(tempdir())
+		brList.copy <- oligoClasses:::duplicateBLList(brList, ids=sampleNames(brList))
+		filename(lrr(brList.copy)[[1]])
+		##
+		## wave correct the log R ratios
+		##
+		gcCorrect(brList.copy, increms=c(12, 10e3),
+			  maxwins=c(12, 10e3))
+		##
+		##
+		rupdated <- lrr(brList.copy)[[1]][, 1]/100
+		## note that rold and rupdated are no longer the same
+		## since the log R ratios were updated in the
+		## brList.copy container
+		plot(rupdated, rold, pch=".")
+		##
+		## Remarks on efficiency
+		##
+		## If a large number of samples are to be processed,
+		## the most efficient procedure is to settle on an
+		## appropriate window size for gc correction using a
+		## subset of the dataset (e.g., 20 samples).  See the
+		## vignette for details.  Here, we assume that two
+		## windows were already selected using such a
+		## procedure (here, 12 bp and 10,000 bp) and the goal
+		## is to efficiently do wave correction using these
+		## two windows for all the samples in a large study.
+		## Currently, our recommended approach is to first
+		## calculate the gc content for these windows:
+		gc.matrix <- ArrayTV:::computeGC(brList.copy, c(12, 10e3),
+						 c(12, 10e3))
+		## The number of columns in gc.matrix will correspond
+		## to the number of windows
+		ncol(gc.matrix)
+		## Having calculated the gc content for these two
+		## windows, we pass the gc matrix to the method
+		## gcCorrect.  This function will iteratively update
+		## the log R ratios for the gc content given by the
+		## columns in gc.matrix (the log R ratios are updated
+		## for each column in gc.matrix).
+		ldPath(tempdir())
+		brList.copy <- oligoClasses:::duplicateBLList(brList, ids=sampleNames(brList))
+		gcCorrect(brList.copy, increms=c(12, 10e3),
+			  maxwins=c(12, 10e3),
+			  providedGC=gc.matrix)
+	}
+}
 }

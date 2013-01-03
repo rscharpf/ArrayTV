@@ -49,7 +49,7 @@ setMethod("gcCorrect", signature(object="BafLrrSet"),
 
 
 
-gcCorrectBafLrrList <- function(object, index.samples, ...){
+gcCorrectBafLrrList <- function(object, index.samples, providedGC, ...){
 	args <- list(...)
 	if("returnOnlyTV" %in% args){
 		return.score <- returnOnlyTV
@@ -68,32 +68,45 @@ gcCorrectBafLrrList <- function(object, index.samples, ...){
 	.packages <- c("oligoClasses", "ArrayTV")
 	isFFloaded <- isPackageLoaded("ff")
 	if(isFFloaded) .packages <- c("ff", .packages)
+	if(!missing(providedGC)) providedGC <- as.matrix(providedGC)
 	reslist <- foreach(j=index.list, .packages=.packages) %dopar% {
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
 		R <- do.call(rbind, rr)
 		rm(rr)
 		R[is.na(R)] <- 0 ## not ideal
-		res <- gcCorrectMain(Ms=as.matrix(R),
-				     chr=chr,
-				     starts=pos,
-				     samplechr=unique(chr),
-				     build=genomeBuild(object),
-				     ...)
-		colnames(res) <- colnames(R)
-		res <- integerMatrix(res, 100)
-		rm(R); gc()
+		if(!missing(providedGC)){
+			for(k in seq_len(ncol(providedGC))){
+				R <- gcCorrectMain(Ms=R,
+						   chr=chr,
+						   starts=pos,
+						   samplechr=unique(chr),
+						   build=genomeBuild(object),
+						   providedGC=providedGC[, k],
+						   ...)
+			}
+		} else {
+			R <- gcCorrectMain(Ms=R,
+					   chr=chr,
+					   starts=pos,
+					   samplechr=unique(chr),
+					   build=genomeBuild(object),
+					   ...)
+		}
+		R <- integerMatrix(R, 100)
+		##rm(R); gc()
 		##
-		## update ff object
+		## update ff object.  Writing is expensive -- only do
+		## once
 		##
 		## Only reasonable to do this when ff package is
 		## loaded. Otherwise, the replacment method is
 		## transient and we do not want to return an entire
 		## copy of the object
 		if(isFFloaded) {
-			lrr(object) <- res
-			res <- NULL
+			lrr(object) <- R
+			R <- NULL
 		}
-		return(res)
+		return(R)
 	}
 	if(!isFFloaded){
 		res <- do.call("cbind", reslist)

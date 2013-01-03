@@ -2,7 +2,7 @@ gcFracAllWin <- function(maxwins, increms,
 			 chr, allstarts,
 			 samplechr, uniqchrs, strategyuse, annotation.pkg,
 			 verbose=FALSE){
-    incremuse <- NULL
+	incremuse <- NULL
     gcFracBoth <- foreach(schr=uniqchrs[uniqchrs %in% samplechr], .combine=rbind, .packages=c(annotation.pkg, "ArrayTV")) %:%
         foreach(incremuse=increms,.combine=cbind) %dopar% {
             starts <- allstarts[chr %in% schr]
