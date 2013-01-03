@@ -15,67 +15,40 @@
 
     \item{}{\code{gcCorrect(object, ...)}:
 
+      Methods have been defined for objects of class \code{matrix},
+      \code{BeadStudioSet}, and \code{BafLrrSetList}.
+
       Objects of class \code{BafLrrSetList} are containers for log R
       ratios and B allele frequencies (BAFs) stored by chromosome.  In
       particular, each element in this list class contains BAFs and log
       R ratios as \code{assayData} and genomic annotation of the markers
       (\code{featureData}) for one chromosome.
 
-      The \code{gcCorrect} method for objects of this class extracts the
-      log R ratios for all elements (chromosomes) in the list, and then
-      combines these into a single matrix.  If the log R ratios are
-      stored as \code{ff} objects, the samples will be GC-corrected in
-      chunks determined by the function \code{ocSamples()}.  For
-      example, if \code{object} contains 100 samples and
-      \code{ocSamples(10)} was specified prior to calling
-      \code{gcCorrect}, the wave correction will be performed on 10
-      samples at a time in order to keep RAM at an acceptable level.
-      Future implementatioins may allow parallelization across strata of
-      samples.
-
-      The value returned is an object of the same class with log R
-      ratios corrected for genomic waves. NOTE: if the log R ratios are
-      stored as ff objects, the log R ratios are overwritten on
-      disk. This means that \code{object} will change as a result of a
-      call to this function.
-
-      Additional arguments are passed to \code{gcCorrectMain} through
-      the \code{...} operator.
-
-
-    }
-
-    \item{}{\code{gcCorrect(object, ...)}:
-
-      \code{BeadStudioSet} is a \code{eSet}-derived container with log R
-      ratios and B allele frequencies stored in the \code{assayData}
-      slot.
-
-      The \code{gcCorrect} method for objects of this class extracts the
-      log R ratios from the \code{assayData} slot, runs wave correction
-      on the resulting matrix, and returns an object of the same class
-      with the \code{assayData} slot suitably updated.  If the log R
-      ratios are stored as \code{ff} objects, the samples will be
+      The \code{gcCorrect} method for objects of this class extracts
+      the log R ratios for all elements (chromosomes) in the list, and
+      then combines these into a single matrix.  If the log R ratios
+      are stored as \code{ff} objects, the samples will be
       GC-corrected in chunks determined by the function
       \code{ocSamples()}.  For example, if \code{object} contains 100
       samples and \code{ocSamples(10)} was specified prior to calling
       \code{gcCorrect}, the wave correction will be performed on 10
       samples at a time in order to keep RAM at an acceptable level.
-      Future implementatioins may allow parallelization across strata of
-      samples.
+      When processing large numbers of samples, it can be helpful to
+      evaluate the tv score on a subset of the samples, pick one or
+      two windows for the correction, and precompute the GC content
+      for these windows. See the examples below for the implementation
+      with \code{BafLrrSetList} objects for details.  When the assay
+      data is represented as \code{ff} objects, the \code{gcCorrect}
+      method returns the value \code{NULL}.  Note that the assay data
+      stored on disk will have changed as a result of calling this
+      method.
+
+      When \code{object} is a \code{matrix} of log R ratios, the
+      \code{gcCorrect} method returns a matrix of wave-adjusted log R
+      ratios.
 
       Additional arguments are passed to \code{gcCorrectMain} through
       the \code{...} operator.
-
-    }
-
-    \item{}{\code{gcCorrect(object,  ....)}:
-
-      Object of class \code{matrix}.
-
-      Additional arguments are passed to \code{gcCorrectMain} through
-      the \code{...} operator.  An object of class \code{matrix} with
-      corrected values are returned.
 
     }
   }
