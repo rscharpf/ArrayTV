@@ -16,10 +16,8 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 	## library('doMC')
 	## library('DNAcopy')
 	## registerDoMC(nodes) ## do at command line
-
 	narrays <- ncol(Ms)
 	if(length(providedGC)==1){
-
 		uniqchrs <- unique(chr)
 		remainingChr <- uniqchrs[is.na(match(uniqchrs, samplechr))]
 

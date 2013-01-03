@@ -54,53 +54,56 @@ gcCorrectBafLrrList <- function(object, index.samples, ...){
 	if("returnOnlyTV" %in% args){
 		return.score <- returnOnlyTV
 	} else return.score <- FALSE
+	if(return.score) stop(paste("return.score not implemented for ", class(object), " objects"))
 	r <- lrr(object)
 	isff <- is.ff(r[[1]])
 	if(missing(index.samples))
 		index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
 	index.list <- splitIndicesByLength(index.samples, ocSamples())
+	l <- elementLengths(object)
+	chr <- paste("chr", rep(chromosome(object), l), sep="")
+	pos <- unlist(position(object))
 	##if(return.score) score.list <- list()
-	score.list <- foreach(j=index.list, .package=c("ff", "ArrayTV")) %dopar% {
+	.packages <- c("oligoClasses", "ArrayTV")
+	isFFloaded <- isPackageLoaded("ff")
+	if(isFFloaded) .packages <- c("ff", .packages)
+	reslist <- foreach(j=index.list, .packages=.packages) %dopar% {
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
 		R <- do.call(rbind, rr)
+		rm(rr)
 		R[is.na(R)] <- 0 ## not ideal
-		##fdl <- featureData(object)
-		##l <- sapply(fdl, nrow)
-		l <- elementLengths(object)
-		chr <- paste("chr", rep(chromosome(object), l), sep="")
-		pos <- unlist(position(object))
-		gcCorrectMain(Ms=as.matrix(R),
-			      chr=chr,
-			      starts=pos,
-			      samplechr=unique(chr),
-			      build=genomeBuild(object),
-			      ...)
-	}
-	##for(i in seq_along(index.list)){
-	##j <- index.list[[i]]
-	##fns <- unlist(sapply(fdl, featureNames))
-	if(!return.score){  ## if not returning TV score, update the brList object
-		fns <- unlist(featureNames(object))
-		sns <- sampleNames(object)[unlist(index.list)]
-		dimnames(res) <- list(fns, sns)
+		res <- gcCorrectMain(Ms=as.matrix(R),
+				     chr=chr,
+				     starts=pos,
+				     samplechr=unique(chr),
+				     build=genomeBuild(object),
+				     ...)
+		colnames(res) <- colnames(R)
 		res <- integerMatrix(res, 100)
-		lrr(object) <- as.matrix(res)
-		##			if(!isff){
-##				## do not use lrr(object)[,j] -- the replacement method takes care of this
-##				lrr(object) <- as.matrix(res)
-##			} else {
-##				## clone the matrix and then write to file
-##				lrr(object) <- as.matrix(res)
-##			}
-		} else {
-			score.list[[i]] <- res
+		rm(R); gc()
+		##
+		## update ff object
+		##
+		## Only reasonable to do this when ff package is
+		## loaded. Otherwise, the replacment method is
+		## transient and we do not want to return an entire
+		## copy of the object
+		if(isFFloaded) {
+			lrr(object) <- res
+			res <- NULL
 		}
+		return(res)
 	}
-	if(return.score) {
-		results <- score.list
-	} else results <- object
-	return(results)
+	if(!isFFloaded){
+		res <- do.call("cbind", reslist)
+		lrr(object) <- res
+	} else {
+		## we do not want to return an entire copy of the
+		## object if ff package is loaded
+		object <- NULL
+	}
+	return(object)
 }
 
 setMethod("gcCorrect", signature(object="BafLrrSetList"),
