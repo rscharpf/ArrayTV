@@ -4,7 +4,7 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 			  jittercorrection=FALSE,
 			  returnOnlyTV=FALSE,
 			  onlyGC=FALSE,
-			  providedGC,
+			  providedGC=NULL,
 			  build, verbose=FALSE){
 	do.call(library, list(paste("BSgenome.Hsapiens.UCSC.", build, sep='')))
 	pkgname <- paste("BSgenome.Hsapiens.UCSC.", build, sep="")
@@ -17,7 +17,7 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 	## library('DNAcopy')
 	## registerDoMC(nodes) ## do at command line
 	narrays <- ncol(Ms)
-	if(missing(providedGC)){ ##otherwise, its a vector of GC scores
+	if(is.null(providedGC)){ ##otherwise, its a vector of GC scores
 		uniqchrs <- unique(chr)
 		remainingChr <- uniqchrs[is.na(match(uniqchrs, samplechr))]
 

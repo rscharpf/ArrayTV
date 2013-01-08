@@ -49,14 +49,14 @@ setMethod("gcCorrect", signature(object="BafLrrSet"),
 
 
 
-gcCorrectBafLrrList <- function(object, index.samples, providedGC, ...){
+gcCorrectBafLrrList <- function(object, index.samples, providedGC=NULL,...){
 	args <- list(...)
 	if("returnOnlyTV" %in% args){
 		return.score <- returnOnlyTV
 	} else return.score <- FALSE
 	if(return.score) stop(paste("return.score not implemented for ", class(object), " objects"))
 	r <- lrr(object)
-	isff <- is.ff(r[[1]])
+	isff <- is(r[[1]], "ff")
 	if(missing(index.samples))
 		index.samples <- seq_len(ncol(object[[1]]))
 	## to keep RAM in check, do in batches of samples
@@ -68,13 +68,18 @@ gcCorrectBafLrrList <- function(object, index.samples, providedGC, ...){
 	.packages <- c("oligoClasses", "ArrayTV")
 	isFFloaded <- isPackageLoaded("ff")
 	if(isFFloaded) .packages <- c("ff", .packages)
-	if(!missing(providedGC)) providedGC <- as.matrix(providedGC)
+	gc.provided <- !is.null(providedGC)
+	if(gc.provided) providedGC <- as.matrix(providedGC)
+	if("returnOnlyTV" %in% names(list(...))){
+		only.tv <- list(...)[["returnOnlyTV"]]
+	} else only.tv <- FALSE
 	reslist <- foreach(j=index.list, .packages=.packages) %dopar% {
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
 		R <- do.call(rbind, rr)
 		rm(rr)
-		R[is.na(R)] <- 0 ## not ideal
-		if(!missing(providedGC)){
+		namatrix <- is.na(R)
+		R[namatrix] <- 0 ## not ideal
+		if(gc.provided){
 			for(k in seq_len(ncol(providedGC))){
 				R <- gcCorrectMain(Ms=R,
 						   chr=chr,
@@ -90,9 +95,13 @@ gcCorrectBafLrrList <- function(object, index.samples, providedGC, ...){
 					   starts=pos,
 					   samplechr=unique(chr),
 					   build=genomeBuild(object),
+					   providedGC=providedGC,
 					   ...)
 		}
-		R <- integerMatrix(R, 100)
+		if(!only.tv) {
+			R <- integerMatrix(R, 100)
+			R[namatrix] <- NA
+		}
 		##rm(R); gc()
 		##
 		## update ff object.  Writing is expensive -- only do
@@ -102,20 +111,23 @@ gcCorrectBafLrrList <- function(object, index.samples, providedGC, ...){
 		## loaded. Otherwise, the replacment method is
 		## transient and we do not want to return an entire
 		## copy of the object
-		if(isFFloaded) {
+		if(isFFloaded & !only.tv) {
 			lrr(object) <- R
 			R <- NULL
 		}
+		gc()
 		return(R)
 	}
-	if(!isFFloaded){
-		res <- do.call("cbind", reslist)
-		lrr(object) <- res
-	} else {
-		## we do not want to return an entire copy of the
-		## object if ff package is loaded
-		object <- NULL
-	}
+	if(!only.tv){
+		if(!isFFloaded){
+			res <- do.call("cbind", reslist)
+			lrr(object) <- res
+		} else {
+			## we do not want to return an entire copy of the
+			## object if ff package is loaded
+			object <- NULL
+		}
+	} else object <- reslist
 	return(object)
 }
 
