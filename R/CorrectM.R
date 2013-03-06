@@ -64,6 +64,15 @@ CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,
 		allcorrections <- vector()
 		allcorrections[tokeep] <- correctionVals[match(paste(chr[tokeep], priorFracWremainingUse[tokeep], sep='.'), (names(correctionVals)))]
 		allcorrections[toremove] <- correctionVals[match(paste(chr[toremove], priorFracWremainingUse[toremove], sep='.'), (names(correctionVals)))]
+		nar<-which(is.na(allcorrections[toremove]))
+		if(length(nar)>2e3){
+			correctionValsNum<-correctionVals
+			names(correctionValsNum)<-as.numeric(gsub('\\.0','',gsub('chr','',names(correctionValsNum))))
+			correctionValsNum<-correctionValsNum[order(as.numeric(names(correctionValsNum)))]
+			allcorrections[toremove][nar]=correctionValsNum[findInterval(as.numeric(paste(gsub('chr','',chr[toremove][nar]),gsub('^0','',
+                        priorFracWremainingUse[toremove][nar]),sep='')),as.numeric(names(correctionValsNum)))]
+			}
+
 		## this should retain information
 		##
 		if(verbose) message('we removed ', length(toremove), ' locations before calculating correction values')
