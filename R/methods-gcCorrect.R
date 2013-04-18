@@ -4,8 +4,8 @@ setMethod("gcCorrect", signature(object="matrix"), function(object, ...){
 
 gcCorrectBeadStudioSet <- function(object, ...){
 	args <- list(...)
-	if("returnOnlyTV" %in% args){
-		is.score <- returnOnlyTV
+	if("returnOnlyTV" %in% names(args)){
+		is.score <- args[["returnOnlyTV"]]
 	} else is.score <- FALSE
 	r <- lrr(object)
 	if(is(r, "matrix")){
@@ -51,8 +51,8 @@ setMethod("gcCorrect", signature(object="BafLrrSet"),
 
 gcCorrectBafLrrList <- function(object, index.samples, providedGC=NULL,...){
 	args <- list(...)
-	if("returnOnlyTV" %in% args){
-		return.score <- returnOnlyTV
+	if("returnOnlyTV" %in% names(args)){
+		return.score <- args[["returnOnlyTV"]]
 	} else return.score <- FALSE
 	if(return.score) stop(paste("return.score not implemented for ", class(object), " objects"))
 	r <- lrr(object)
