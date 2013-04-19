@@ -15,6 +15,7 @@ gcCorrectBeadStudioSet <- function(object, ...){
 	if(isff){
 		index.list <- split(seq_len(ncol(object)), ocSamples())
 	} else index.list <- list(seq_len(ncol(object)))
+	if(is.score) score.list <- list()
 	for(i in seq_along(index.list)){
 		j <- index.list[[i]]
 		pos <- position(object)
