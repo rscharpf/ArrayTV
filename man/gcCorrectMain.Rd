@@ -10,7 +10,7 @@ Correct gc biases in array data. The user must provide a range of windows and th
 \usage{
    gcCorrectMain(Ms, chr, starts, samplechr, nodes, increms,
                           maxwins, jittercorrection=FALSE,
-                          returnOnlyTV=FALSE, onlyGC=FALSE,providedGC=0,build, verbose=FALSE)
+                          returnOnlyTV=FALSE, onlyGC=FALSE,providedGC=NULL,build, verbose=FALSE)
 }
 \arguments{
   \item{Ms}{
