@@ -22,7 +22,7 @@ gcCorrectBeadStudioSet <- function(object, ...){
 		chr <- paste("chr", chromosome(object), sep="")
 		res <- gcCorrectMain(Ms=r,
 				     chr=chr,
-				     start=pos,
+				     starts=pos,
 				     samplechr=unique(chr),
 				     build=genomeBuild(object),
 				     ...)
