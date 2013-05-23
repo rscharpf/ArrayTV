@@ -136,3 +136,92 @@ setMethod("gcCorrect", signature(object="BafLrrSetList"),
 	  function(object, ...){
 		  gcCorrectBafLrrList(object, ...)
 	  })
+
+gcModel <- function(data, window, verbose=FALSE){
+	## assume data is summarized experiment
+	build <- metadata(rowData(data))$genome
+	library(paste("BSgenome.Hsapiens.UCSC.", build, sep=''), character.only=TRUE)
+	if(verbose) print('Getting gc content From BS genome Object')
+	Hsapiens <- get("Hsapiens")
+	chroms <- unique(chromosome(data))
+	maxwin <- increm <- window
+	## query genome prior to looking at genomic position of
+	## markers??
+	gc <- list()
+	for(i in seq_along(chroms)){
+		if(verbose) cat(".")
+		chr <- chroms[i]
+		j <- which(chromosome(data)==chr)
+		## calculates the gc content for each window of size increm
+		pregcFrac <- letterFrequencyInSlidingView(unmasked(Hsapiens[[chr]]), view.width=increm, 'CG', as.prob=TRUE)
+		##if(verbose) print('gc content stored')
+		startinds <- rep(start(data)[j], each=maxwin/increm) +
+			rep(seq(0, maxwin-increm, increm), length(j))
+		startinds[which(startinds<1)] <- 1
+		startinds[which(startinds>length(pregcFrac))] <- length(pregcFrac)
+		startindbackwards <- rep(start(data)[j], each=maxwin/increm)-rep(seq(increm, maxwin, increm), length(j))
+		gcFrac1 <- pregcFrac[startinds]
+		if(any(is.na(gcFrac1)))
+			gcFrac1[is.na(gcFrac1)] <- mean(gcFrac1, na.rm=TRUE)
+		startindbackwards[which(startindbackwards<1)] <- 1
+		startindbackwards[which(startindbackwards>length(pregcFrac))] <- length(pregcFrac)
+		gcFracbackwards1 <- pregcFrac[startindbackwards]
+		if(any(is.na(gcFracbackwards1))){
+			gcFracbackwards1[is.na(gcFracbackwards1)] <- mean(gcFracbackwards1, na.rm=TRUE)
+		}
+		gc[[i]] <- (gcFrac1+gcFracbackwards1)/2
+	}
+	result <- unlist(gc)
+	return(result)
+}
+
+midpoint <- function(object) start(object) + floor((width(object)-1)/2)
+
+.rescaleGC <- function(gc, cn, shift=0){
+	x <- scale(gc) ## mean 0, sd1
+	## give it same sd as cn
+	x <- x*mad(cn,na.rm=TRUE)
+	## give it same location as cn
+	x <- x+mean(cn,na.rm=TRUE) + shift
+	x
+}
+
+gcModelSeq <- function(data, window, verbose=FALSE){
+	## assume data is summarized experiment
+	build <- genome(rowData(data))[[1]]
+	library(paste("BSgenome.Hsapiens.UCSC.", build, sep=''), character.only=TRUE)
+	if(verbose) print('Getting gc content From BS genome Object')
+	Hsapiens <- get("Hsapiens")
+	chroms <- unique(chromosome(data))
+	maxwin <- increm <- window
+	starts <- midpoint(data)
+	## query genome prior to looking at genomic position of
+	## markers??
+	gc <- list()
+	for(i in seq_along(chroms)){
+		if(verbose) cat(".")
+		chr <- chroms[i]
+		j <- which(chromosome(data)==chr)
+		## calculates the gc content for each window of size increm
+		pregcFrac <- letterFrequencyInSlidingView(unmasked(Hsapiens[[chr]]), view.width=increm, 'CG', as.prob=TRUE)
+		##if(verbose) print('gc content stored')
+		startinds <- rep(starts, each=maxwin/increm) +
+			rep(seq(0, maxwin-increm, increm), length(j))
+		startinds[which(startinds<1)] <- 1
+		startinds[which(startinds>length(pregcFrac))] <- length(pregcFrac)
+		startindbackwards <- rep(starts, each=maxwin/increm)-rep(seq(increm, maxwin, increm), length(j))
+		gcFrac1 <- pregcFrac[startinds]
+		if(any(is.na(gcFrac1)))
+			gcFrac1[is.na(gcFrac1)] <- mean(gcFrac1, na.rm=TRUE)
+		startindbackwards[which(startindbackwards<1)] <- 1
+		startindbackwards[which(startindbackwards>length(pregcFrac))] <- length(pregcFrac)
+		gcFracbackwards1 <- pregcFrac[startindbackwards]
+		if(any(is.na(gcFracbackwards1))){
+			gcFracbackwards1[is.na(gcFracbackwards1)] <- mean(gcFracbackwards1, na.rm=TRUE)
+		}
+		gc[[i]] <- (gcFrac1+gcFracbackwards1)/2
+	}
+	result <- unlist(gc)
+	return(result)
+}
+

@@ -1,0 +1,123 @@
+%\VignetteIndexEntry{ArrayTV Vignette}
+%\VignetteKeywords{copy number}
+%\VignettePackage{ArrayTV}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[numbers]{natbib}
+\usepackage{color}
+\usepackage[margin=1in]{geometry}
+
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rfunction}[1]{\texttt{#1}}
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rclass}[1]{\texttt{#1}}
+\newcommand{\R}{\textsf{R}}
+
+\title{Wave correction for arrays}
+\author{Eitan}
+
+\begin{document}
+
+\maketitle
+
+<<setup, echo=FALSE>>=
+options(width=70)
+topdf <- function(){
+	Sweave("ArrayTV.Rnw")
+	tools::texi2pdf("ArrayTV.tex")
+}
+@
+
+\begin{abstract}
+  Overview of what this package does.  Inspiration from Speed et
+  al. method for sequencing platforms.
+\end{abstract}
+
+
+\section{Simple Usage}
+
+<<pkgs>>=
+library(ArrayTV)
+@
+
+- An example with a matrix
+
+- Default windows with the above matrix.  Plots of the TV score with the default windows.
+
+- Selecting different windows
+
+- Plot of the matrix before and after window selection
+
+
+\section{S4 Classes and methods}
+
+\subsection*{Nimblegen example}
+
+\subsection*{Affymetrix example}
+
+\subsection*{Illumina example}
+
+<<pkgs2>>=
+library(oligoClasses)
+library(VanillaICE)
+@
+
+An example with a more complicated data structure generated from the
+\Rpackage{crlmm} [ref].  Mention provenance of the data and how it was
+generated.
+
+<<>>=
+path <- system.file("extdata", package="ArrayTV")
+bset <- readRDS(file.path(path, "bsetChr9.rds"))
+@
+
+Mention how its bettter to do all chromosomes simultaneously, but here
+we're doing one chromosome to illustrate the methods.
+
+%<<cancer,fig=TRUE>>=
+%par(las=1)
+%plot(position(bset)/1e6, lrr(bset)/100, pch=".", ylim=c(-3, 1.5), col="grey")
+%## add loess line
+%@
+
+We should be able to find a better example than this.
+added some text
+
+<<wavecorrection>>=
+bset.gc <- gcCorrect(bset, increms=c(100, 10000), maxwins=c(1000, 100e3))
+@
+
+<<wavedata>>=
+wave.df <- data.frame(position=rep(position(bset)/1e6, 2),
+		      r=c(lrr(bset)/100, lrr(bset.gc)/100),
+		      wave.corr=c(rep("raw", nrow(bset)), rep("ArrayTV", nrow(bset))))
+wave.df$wave.corr <- factor(wave.df$wave.corr, levels=c("raw", "ArrayTV"))
+library(lattice)
+p <- xyplot(r~position|wave.corr, wave.df, pch=".", col="gray",
+	    ylim=c(-2, 2), ylab="log R ratio", xlab="position (Mb)",
+	    scales=list(y=list(tick.number=8)),
+	    panel=function(x,y,subscripts,...){
+		    panel.grid(lty=2)
+		    panel.xyplot(x, y, ...)
+		    panel.abline(h=0)
+		    panel.loess(x, y, span=1/20, lwd=2, col="black")
+	    }, par.strip.text=list(cex=0.9), layout=c(1,2), as.table=TRUE)
+fit1 <- loess(lrr(bset)/100~position(bset), span=1/20)
+fit2 <- loess(lrr(bset.gc)/100~position(bset), span=1/20)
+plot(fit1$x, fit1$fitted, type="l", ylim=c(-3,1.5))
+lines(fit1$x, fit2$fitted, col="blue")
+@
+
+<<wavefig,fig=TRUE>>=
+print(p)
+@
+
+<<sessionInfo,results=tex>>=
+toLatex(sessionInfo())
+@
+
+
+\end{document}

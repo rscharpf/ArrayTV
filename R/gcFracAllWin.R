@@ -3,9 +3,9 @@ gcFracAllWin <- function(maxwins, increms,
 			 samplechr, uniqchrs, strategyuse, annotation.pkg,
 			 verbose=FALSE){
 	incremuse <- NULL
-    gcFracBoth <- foreach(schr=uniqchrs[uniqchrs %in% samplechr], .combine=rbind, .packages=c(annotation.pkg, "ArrayTV")) %:%
-        foreach(incremuse=increms,.combine=cbind) %dopar% {
-            starts <- allstarts[chr %in% schr]
+	gcFracBoth <- foreach(schr=uniqchrs[uniqchrs %in% samplechr], .combine=rbind, .packages=c(annotation.pkg, "ArrayTV")) %:%
+		foreach(incremuse=increms,.combine=cbind) %dopar% {
+			starts <- allstarts[chr %in% schr]
             ## STRATEGY 1: This is not implemented
 ##             if(strategyuse==1){
 ##                 if(verbose) print(paste('vv is',vv)  )
