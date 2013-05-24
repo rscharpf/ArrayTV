@@ -1,5 +1,5 @@
 Package: ArrayTV
-Version: 1.1.28
+Version: 1.1.29
 Title: Implementation of wave correction for arrays
 Date: 2012-07-09
 Author: Eitan Halper-Stromberg
@@ -7,10 +7,10 @@ Maintainer: Eitan Halper-Stromberg <ehalper2@jhmi.edu>
 Description: Wave correction for genotyping arrays
 License: GPL (>= 2)
 LazyLoad: yes
-Depends: R (>= 2.14), foreach, DNAcopy, GenomicRanges, Biostrings,
-                  BSgenome, methods, oligoClasses (>= 1.21.3)
-Imports: grDevices
-Suggests: RColorBrewer, doMC
+Depends: R (>= 2.14),GenomicRanges, Biostrings,
+	 BSgenome, methods, oligoClasses (>= 1.21.3)
+Imports: grDevices, foreach, DNAcopy
+Suggests: RColorBrewer, doMC, BSgenome.Hsapiens.UCSC.hg18, BSgenome.Hsapiens.UCSC.hg19
 Collate: AllGenerics.R
          calctvScore.R
 	 computeGC.R

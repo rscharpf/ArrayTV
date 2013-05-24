@@ -7,183 +7,465 @@
 \usepackage[numbers]{natbib}
 \usepackage{color}
 \usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\bibliographystyle{plain}
 
 \newcommand{\scscst}{\scriptscriptstyle}
 \newcommand{\scst}{\scriptstyle}
-\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rpackage}[1]{\texttt{#1}}
 \newcommand{\Rfunction}[1]{\texttt{#1}}
 \newcommand{\Robject}[1]{\texttt{#1}}
-\newcommand{\Rclass}[1]{\texttt{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
 \newcommand{\R}{\textsf{R}}
+\newcommand{\ArrayTV}{\Rpackage{ArrayTV}}
+\newcommand{\comm}[1]{{\color{blue}{\small #1}}}
 
 \title{Wave correction for arrays}
-\author{Eitan Halper-Stromberg}
+\author{Eitan Halper-Stromberg and Robert B. Scharpf}
 
 \begin{document}
 
   \maketitle
 
 <<setup, echo=FALSE>>=
-    options(width=70)
-topdf <- function(){
-    Sweave("ArrayTV.Rnw")
-    tools::texi2pdf("ArrayTV.tex")
-}
+options(width=70)
 @
 
 \begin{abstract}
-  ArrayTV is a GC correction algorithm for microarray data designed to mitigate the appearance of waves.  This work is inspired by a method for mitigating waves in sequencing data (Benjamini and Speed, 2012). We find the best window, i.e the window size that most captures the dependence of signal intensity on gc content for each array using the total variance distance statistic (TV score). The correction each probe receives is the mean signal intensity of all probes sharing the same local gc. We center windows at the starting position of each probe.
+  \ArrayTV{} is a GC correction algorithm for microarray data designed
+  to mitigate the appearance of waves.  This work is inspired by a
+  method for mitigating waves in sequencing data
+  \cite{Benjamini2012}. We find the genomic window for computing GC
+  that best captures the dependence of signal intensity on GC content
+  for each array using the total variance distance statistic (TV
+  score). The correction each probe receives is the mean signal
+  intensity of all probes sharing the same local GC. We center windows
+  at the starting position of each probe.
 \end{abstract}
 
-\section{Calculate and Plot TV Scores}
+\section{Adjusting copy number estimates for GC waves}
 
-\subsection*{generate TV scores}
-<<tvscores>>=
-    ## We will generate total variance scores (TV scores) for 30 window sizes to determine the
-    ## optimal window(s) for our gc correction. NOTE: We use the start location of each probe as
-    ## our probe locations. If you use this package with microarray data where probe locations
-    ## are reported in the middle of the probes, you should adjust these so that they represent
-    ## the start positions (i.e middle probe locs - probelength/2)
+
+\paragraph{Importing data.}
+The wave correction methods in \ArrayTV{} handle simple matrices with
+rows indexing markers and columns indexing samples, as well as more
+complex data structures commonly used to process Affymetrix and
+Illumina platforms made available in the \Rpackage{oligoClasses}
+package.  In this vignette, we illustrate our approach with a single
+sample assayed on the Agilent, Affymetrix 6.0, and Nimblegen platforms
+(eitan, is this hapmap? is it the same sample?, do the Nimblegen and
+Agilent arrays have specific names?). For each platform, we provide a
+matrix.  The rows of the matrix correspond to markers on chromosome 15
+and the columns correspond to the physical position of the first
+nucleotide of the marker using UCSC build hg18 (note: for genotyping
+arrays, the position should be adjusted to the start of the marker and
+not the location of the SNP) and log ratios that we expect to be
+proportional to the copy number as well as sequence artifacts such as
+GC content. \comm{are these log R ratios or simply log ratios?  how
+  were they calculated?}  Hereafter, we refer to the log ratios as
+\textit{M} values.  To keep the size of this package small, we provide
+the $M$ values as integers ($M \times 1000$). In the following code,
+we load the data for each platform, expect the first few rows, and
+transform the $M$ values for each platform to the original scale.
+
+<<loaddata>>=
 library(ArrayTV)
 path <- system.file("extdata", package="ArrayTV")
-load(file.path(path, "arrayExamples.rda"))
+load(file.path(path, "array_logratios.rda"))
+head(agilent)
+head(affymetrix)
+head(nimblegen)
+agilent[, "M"] <- agilent[, "M"]/1000
+affymetrix[, "M"] <- affymetrix[, "M"]/1000
+nimblegen[, "M"] <- nimblegen[, "M"]/1000
+@
 
-samplechr=c('chr15')
-increms=c(10,1000,100e3)
-wins=c(100,10e3,1e6)
-nodes=1
+<<platformdata,eval=FALSE,echo=FALSE>>=
+## TO DELETE
+nimblegen <- matrix(c(as.integer(nimstarts), as.integer(nimMs*1000)),
+		    ncol=2, byrow=FALSE)
+affymetrix <- matrix(c(as.integer(afstarts), as.integer(afMs*1000)),
+		     ncol=2, byrow=FALSE)
+agilent <- matrix(c(as.integer(agstarts), as.integer(agMs*1000)),
+		  ncol=2, byrow=FALSE)
+colnames(agilent) <- colnames(affymetrix) <- colnames(nimblegen) <- c("position", "M")
+save(nimblegen, affymetrix, agilent, file="~/Software/ArrayTV/inst/extdata/array_logratios.rda")
+@
+
+We will generate total variance scores (TV scores) for 30 window sizes
+to determine the optimal window(s) for GC correction. Again, we assume
+that the positions denote the start location of each probe. %If you use
+%this package with microarray data where probe locations are reported
+%in the middle of the probes, you should adjust these so that they
+%represent the start positions (i.e middle probe locs - probelength/2).
+While our analysis is limited to chromosome 15 for practical
+constraints, in practice we recommend implementing the wave correction
+on all chromosomes simultaneously (\comm{including X and Y, or just
+  the autosomes?})
+%In the following code chunk, we limit our focus to chromosome 15
+%(though, in practice we recommend []) and specify variables
+Next, we specify \Robject{increms} and \Robject{wins} to indicate the
+size of the genomic intervals surrounding the markers from which GC
+content will be computed.  \comm{Please explain what windows will be
+  evaluated based on the selection of increms and wins below.}
+
+<<windows>>=
+samplechr <- c('chr15')
+## Eitan: say what this means
+increms <- c(10,1000,100e3)
+wins <- c(100,10e3,1e6)
+@
+
+To enable parallelization, execute the following unevaluated code
+chunk. \comm{ is this parallelized by chromosome?}
+
+<<enablePar,eval=FALSE>>=
 library(doMC)
 registerDoMC(nodes)
-nimtvScores=gcCorrect(matrix(nimMs),nimchr,nimstarts,samplechr,nodes,increms,wins,
-jittercorrection=FALSE,returnOnlyTV=TRUE,build='hg18')
-
-agtvScores=gcCorrect(matrix(agMs),agchr,agstarts,samplechr,nodes,increms,wins,
-jittercorrection=FALSE,returnOnlyTV=TRUE,build='hg18')
-
-aftvScores=gcCorrect(matrix(afMs),afchr,afstarts,samplechr,nodes,increms,wins,
-jittercorrection=FALSE,returnOnlyTV=TRUE,build='hg18')
-
-tvScoresSplit=split(data.frame(nimtvScores,agtvScores,aftvScores),rep(1:3,each=10))
-windowsize=c('small windows','medium windows','large windows')
-
 @
-\subsection*{view TV scores}
-<<tvscorefig,fig=TRUE>>=
-par(mfrow=c(1,3),mar=c(2.5,2.5,1.6,1.1),mgp=c(1.5,.5,0),oma=c(0,0,4,0))
+
+\paragraph{Evaluating TV scores as a function of window size for
+  computing GC.} The class of the first argument to the
+\Rfunction{gcCorrect} method determines the dispatch to the low-level
+function \Rfunction{gcCorrectMain}.  Any of the arguments to
+\Rfunction{gcCorrectMain} can be passed through the \texttt{...}
+operator and we refer the user to the documentation for
+\Rfunction{gcCorrectMain} for additional arguments and
+\Rfunction{gcCorrect} for the classes of objects handled by the
+\Rfunction{gcCorrect} method.  Computing the GC content of the
+sequence for each marker requires that the appropriate BSgenome
+package is loaded.  For example, here the package
+\Rpackage{BSgenome.Hsapiens.UCSC.hg18} is loaded internally.  \comm{I
+  do not like maxwins and increms.  It would be much simpler just to
+  pass the vector of window sizes we want to evaluate? Why not just
+  return a list here: a matrix of tv scores (rows index scores,
+  columns are size of window and TV score), the optimal window size
+  (integer), the higest TV score, the GC values corresponding to the
+  highest tv score, and the adjusted M values corresponding to the
+  highest tv score?  get rid of the returnOnly argument.  The
+  gcCorrectMain should be able to figure out what we want to do
+  without passing 'samplechr'.}  The following codechunk is
+unevaluated.
+
+<<tvscores,eval=FALSE>>=
+nimtvScores <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
+			 chr=rep("chr15", nrow(nimblegen)),
+			 starts=nimblegen[, "position"],
+			 samplechr="chr15", ## would be nice not to have to declare this
+			 increms=increms,
+			 maxwins=wins,
+			 returnOnlyTV=TRUE,
+			 build='hg18')
+agtvScores <- gcCorrect(agilent[, "M", drop=FALSE],
+			chr=rep("chr15", nrow(agilent)),
+			starts=agilent[, "position"],
+			samplechr="chr15",
+			increms=increms,
+			maxwins=wins,
+			returnOnlyTV=TRUE,
+			build="hg18")
+aftvScores <- gcCorrect(affymetrix[, "M", drop=FALSE],
+			chr=rep("chr15", nrow(affymetrix)),
+			starts=affymetrix[,"position"],
+			samplechr="chr15",
+			increms=increms,
+			maxwins=wins,
+			returnOnlyTV=TRUE,
+			build="hg18")
+@
+
+<<saveTvScores,eval=FALSE,echo=FALSE>>=
+save(nimtvScores, agtvScores, aftvScores, file="~/Software/ArrayTV/inst/extdata/tvScores.rda")
+@
+
+We load the previously computed TV scores from file, and create a list
+of the TV scores organized by the size of the genomic window (small,
+medium, or large) for computing GC.
+
+<<loadtvscores>>=
+load(file.path(system.file("extdata", package="ArrayTV"), "tvscores.rda"))
+tvScoresSplit <- split(data.frame(nimtvScores,agtvScores,aftvScores),rep(1:3,each=10))
+@
+
+\comm{Define a function plotTV with ... for arguments that can be
+  passed to plot.  The visualization should then be accomplished by\\
+  par(something)\\
+  plotTV(agilentResults)\\
+  plotTV(affyResults)\\
+  plotTV(nimResults)
+  }
+
+  In the following code chunk, we plot the TV scores.
+<<tvscorefig,fig=TRUE,include=FALSE, width=6, height=4>>=
+par(mfrow=c(1,3), mar=c(2.5,0.05,1.6,0.05), mgp=c(1.5,.5,0),
+    oma=c(0,4,4,0), las=1)
 for(ii in 1:3){
     plot(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,1],col='blue',
          ylim=c(0,max(unlist(tvScoresSplit))),
+	 yaxt="n",
          xlab='window extension from center',
-         ylab='tv score',main=windowsize[ii])
-    points(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,2],col='red')
-    points(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,3],col='green')
-    legend('bottomright',legend=c('NimbleGen','Agilent','Affy'),col=c('red','green','blue'),pch=1)
+	 pch=20,
+	 cex=2,
+         ylab='tv score',main=windowsize[ii],
+	 type="l")
+    if(ii==1){
+	    axis(2, at=pretty(c(0,0.1), 6), outer=TRUE)
+	    legend('top',legend=c('NimbleGen','Agilent','Affy'),
+		   col=c('red','green','blue'),pch=20)
+    }
+    points(rownames(tvScoresSplit[[ii]]),
+	   tvScoresSplit[[ii]][,1],col='blue',
+	   pch=20, cex=2, type="p")
+    points(rownames(tvScoresSplit[[ii]]),
+	   tvScoresSplit[[ii]][,2],col='red',
+	   pch=20, cex=2, type="l")
+    points(rownames(tvScoresSplit[[ii]]),
+	   tvScoresSplit[[ii]][,2],col='red',
+	   pch=20, cex=2, type="p")
+    points(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,3],
+	   pch=20, cex=2,
+	   col='green', type="l")
+    points(rownames(tvScoresSplit[[ii]]),tvScoresSplit[[ii]][,3],
+	   pch=20, cex=2,
+	   col='green', type="p")
+
 }
 @
-\section{Do Correction}
+
+\begin{figure}[t]
+  \begin{center}
+  \includegraphics[width=0.8\textwidth]{ArrayTV-tvscorefig}
+  \caption{Text describing the figure}
+  \end{center}
+\end{figure}
+
+
+\paragraph{Computing the GC-adjusted $M$ values.}
+
+\comm{We could get rid of this section if we return a list from the
+  original call.}
+
 \subsection*{use optimal window sizes to perform correction}
-<<correct>>=
+<<correct,eval=FALSE>>=
     ## We will do correction using two windows for each platform. The window sizes are chosen
     ## baed upon the tv scores generated in the last section (we choose windows with relatively
     ## large tv scores-the theory being that windows with larger tv scores are better for
     ## correction).
+nimcM1 <- gcCorrect(matrix(nimMs),nimchr,nimstarts,samplechr,nodes,increms=6e5,maxwins=6e5,build='hg18')
+nimcM2 <- gcCorrect(nimcM1,nimchr,nimstarts,samplechr,nodes,increms=9e3,maxwins=9e3,build='hg18')
+agcM1 <- gcCorrect(matrix(agMs),agchr,agstarts,samplechr,nodes,increms=7e5,maxwins=7e5,build='hg18')
+agcM2 <- gcCorrect(agcM1,agchr,agstarts,samplechr,nodes,increms=4e3,maxwins=4e3,build='hg18')
+afcM1 <- gcCorrect(matrix(afMs),afchr,afstarts,samplechr,nodes,increms=1e3,maxwins=1e3,build='hg18')
+afcM2 <- gcCorrect(afcM1,afchr,afstarts,samplechr,nodes,increms=3e5,maxwins=3e5,build='hg18')
+@
 
-nimcM1=gcCorrect(matrix(nimMs),nimchr,nimstarts,samplechr,nodes,increms=6e5,maxwins=6e5,build='hg18')
+<<correctSave,eval=FALSE,echo=FALSE>>=
+save(nimcM1, nimcM2, agcM1, agcM2, afcM1, afcM2, file="~/Software/ArrayTV/inst/extdata/correctedMs.rda")
+@
 
-nimcM2=gcCorrect(nimcM1,nimchr,nimstarts,samplechr,nodes,increms=9e3,maxwins=9e3,build='hg18')
+<<correctLoad,echo=FALSE>>=
+load(file.path(path, "correctedMs.rda"))
+@
 
-agcM1=gcCorrect(matrix(agMs),agchr,agstarts,samplechr,nodes,increms=7e5,maxwins=7e5,build='hg18')
-
-agcM2=gcCorrect(agcM1,agchr,agstarts,samplechr,nodes,increms=4e3,maxwins=4e3,build='hg18')
-
-afcM1=gcCorrect(matrix(afMs),afchr,afstarts,samplechr,nodes,increms=1e3,maxwins=1e3,build='hg18')
-
-afcM2=gcCorrect(afcM1,afchr,afstarts,samplechr,nodes,increms=3e5,maxwins=3e5,build='hg18')
-
+<<corrected_dataframe>>=
 wave.df <- data.frame(position=c(rep(nimstarts/1e6, 2),rep(agstarts/1e6, 2),rep(afstarts/1e6,2)),
 		      r=c(nimMs, nimcM2,agMs,agcM2,afMs,afcM2),
-		      wave.corr=c(rep("raw NimbleGen", nrow(nimcM2)),
-                      rep("ArrayTV NimbleGen", nrow(nimcM2)),
-                      rep('raw Agilent',nrow(agcM2)),rep('ArrayTV Agilent',nrow(agcM2)),
-                      rep('raw Affy',nrow(afcM2)),rep('ArrayTV Affy',nrow(afcM2))))
-
-wave.df$wave.corr <- factor(wave.df$wave.corr, levels=c("raw NimbleGen", "ArrayTV NimbleGen",
-                                               "raw Agilent","ArrayTV Agilent","raw Affy",
-                                               "ArrayTV Affy"))
+		      platform=rep(c(rep("Nimblegen", 2),
+		      rep("Agilent", 2),
+		      rep("Affymetrix", 2)), c(length(nimMs),
+					       length(nimcM2),
+					       length(agMs),
+					       length(agcM2),
+					       length(afMs),
+					       length(afcM2))),
+		      wave.corr=c(rep("raw", length(nimMs)),
+		      rep("ArrayTV", length(nimcM2)),
+		      rep("raw", length(agMs)),
+		      rep("ArrayTV", length(agcM2)),
+		      rep("raw", length(afMs)),
+		      rep("ArrayTV", length(afcM2))))
+wave.df$platform <- factor(wave.df$platform, levels=c("Nimblegen",
+					      "Agilent", "Affymetrix"))
+wave.df$wave.corr <- factor(wave.df$wave.corr, levels=c("raw", "ArrayTV"))
 @
-\subsection*{view corrected and uncorrected signal}
-<<makewavefig,fig=TRUE>>=
+
+%\subsection*{view corrected and uncorrected signal}
+We use a \Rpackage{lattice} display to visualize the $M$ values before
+and after correction for the three platforms (Figure
+\ref{fig:crossplatform})
+<<makewavefig>>=
     ## For each of the 3 example platforms, the uncorrected signal appears immediately above the
     ## corrected signal, across chromosome 15. A smoothed loess line is drawn through each.
-    library(lattice)
-    p <- xyplot(r~position|wave.corr, wave.df, pch=".", col="gray",
-                ylim=c(-.6,.6), xlim=c(18,102),ylab="log R ratio", xlab="position (Mb) on chr15",
-                scales=list(y=list(tick.number=8)),
-                panel=function(x,y,subscripts,...){
+require("lattice") && require("latticeExtra")
+p <- xyplot(r~position|platform+wave.corr, wave.df, pch=".", col="gray",
+	    ylim=c(-2,1.5), xlim=c(18,102),ylab="log R ratio", xlab="position (Mb) on chr15",
+	    scales=list(y=list(tick.number=8)),
+	    panel=function(x,y,subscripts,...){
                     panel.grid(lty=2)
                     panel.xyplot(x, y, ...)
                     panel.abline(h=0)
                     panel.loess(x, y, span=1/20, lwd=2, col="black")
-                }, par.strip.text=list(cex=0.9), layout=c(1,6), as.table=TRUE)
-
-print(p)
+	    }, par.strip.text=list(cex=0.9),
+	    layout=c(2,3),
+	    as.table=TRUE)
 @
+
+<<crossplatform,fig=TRUE,include=FALSE,width=8,height=6>>=
+p2 <- useOuterStrips(p)
+print(p2)
+@
+
+\begin{figure}[t]
+  \begin{center}
+  \includegraphics[width=0.8\textwidth]{ArrayTV-crossplatform}
+  \caption{\label{fig:crossplatform} Comparison of log ratios before and
+    after \ArrayTV{} wave correction (rows) for three popular array
+    platforms (columns).}
+  \end{center}
+\end{figure}
 
 \section{view a SpikeIn}
-<<cbs>>=
-    ## use CBS to segment corrected and uncorrected signal within a region containing a
-    ## known copy number amplification (expected copy number 2.5).
-    cbs.out=data.frame()
-for(ii in 1:6){
-    MsUse=get(c('nimMs','nimcM2','agMs','agcM2','afMs','afcM2')[ii])
-    chrUse=get(c('nimchr','nimchr','agchr','agchr','afchr','afchr')[ii])
-    startsUse=get(c('nimstarts','nimstarts','agstarts','agstarts','afstarts','afstarts')[ii])
-    toUse=!(duplicated(startsUse))
-    cna1=CNA(MsUse[toUse],chrUse[toUse],startsUse[toUse],data.type="logratio",
-    unique(wave.df$wave.corr)[ii])
-    segment.smoothed.CNA.object=segment(cna1,verbose=1)
-    cbs.out=rbind(cbs.out,segment.smoothed.CNA.object$output)
+Use CBS to segment corrected and uncorrected signal within a region
+containing a known copy number amplification (expected copy number
+2.5).
+<<cbs,eval=FALSE>>=
+
+
+
+if(require("DNAcopy")){
+	cbs.out <- data.frame()
+	cbs.segs <- list()
+	platforms <- c("Nimblegen", "Agilent", "Affymetrix")
+	correction <- c("raw", "ArrayTV")
+	Ms <- list(nimblegen[, "M"], nimcM2,
+		   agilent[, "M"], agcM2,
+		   affymetrix[, "M"], afcM2)
+	starts <- list(nimblegen[, "position"],
+		       agilent[, "position"],
+		       affymetrix[, "position"])
+	k <- 0
+	for(i in 1:3){
+		for(j in 1:2){
+			k <- k+1
+			MsUse <- Ms[[k]]
+			chrUse <- rep("chr15", length(MsUse))
+			startsUse <- starts[[i]]
+			toUse <- !(duplicated(startsUse))
+			cna1 <- CNA(as.matrix(MsUse[toUse]),
+				    chrUse[toUse],
+				    startsUse[toUse],
+				    data.type="logratio",
+				    paste(platforms[i], correction[j], sep="_"))
+			##unique(wave.df$wave.corr)[ii])
+			cbs.segs[[k]] <- segment(cna1, verbose=1)
+		}
+	}
+	cbs.out <- do.call("rbind", lapply(cbs.segs, "[[", "output"))
 }
+@
 
-cbs.out$ID=gsub('\\.',' ',cbs.out$ID)
-cbs.segs <- RangedData(IRanges(cbs.out$loc.start, cbs.out$loc.end),
-                       numMarkers = cbs.out$num.mark, seg.mean = cbs.out$seg.mean,
-                       chrom = 14L,space=cbs.out$ID)
+<<saveCBSsegs,eval=FALSE,echo=FALSE>>=
+save(cbs.out, file="~/Software/ArrayTV/inst/extdata/cbs_out.rda")
+@
 
-raw.data <- RangedData(IRanges(wave.df$position*1e6, width=1),
-                       numMarkers=1,seg.mean = wave.df$r, chrom = 14L,space=wave.df$wave.corr)
-spikeIn=IRanges(start=45396506,end=45537976)
-spikeinStart=45396506;spikeinEnd=45537976
-raw.data$cbs.seg=cbs.segs$seg.mean[findOverlaps(ranges(raw.data), ranges(cbs.segs),
-select="first", drop=TRUE)]
-raw.data$spikeIn=raw.data$cbs.seg
-raw.data$spikeIn[which(is.na(findOverlaps(unlist(ranges(raw.data)),spikeIn,select="first")))]=NA
-rawd=as.data.frame(raw.data)
+<<loadCBSsegs>>=
+load(file.path(path, "cbs_out.rda"))
+@
 
-## view CBS lines through the spike in (expected copy number 2.5). Black points represent
-## signal intensities for each probe. Red lines represent segmentation of the
-## intensities (using the circular binary segmentaion algorithm) and blue lines
-## represent a region of known copy number 2.5 (a subtle amplification). As in
-## the previous figure, raw signal intensities appear immediately above the corrected
-## intensities for each platform
+\comm{Following is a big code chunk that is complex.  Need to break it
+  up and explain what you are doing.}
+<<cbsResults>>=
+ids <- cbs.out$ID
+platforms <- gsub("_raw", "", ids)
+platforms <- gsub("_ArrayTV", "", platforms)
+correction <- gsub("Nimblegen_", "", ids)
+correction <- gsub("Affymetrix_", "", correction)
+correction <- gsub("Agilent_", "", correction)
+cbs.segs <- GRanges(rep("chr14", nrow(cbs.out)),
+		    IRanges(cbs.out$loc.start, cbs.out$loc.end),
+		    numMarkers=cbs.out$num.mark,
+		    seg.mean = cbs.out$seg.mean,
+		    platform = platforms,
+		    correction=correction)
 
-p2 <- xyplot(seg.mean+cbs.seg+spikeIn~start|space,rawd,
-             ylim=c(-.6,.6),xlim=c(spikeinStart-2.4e6,spikeinEnd+2.4e6),ylab="log R ratio",
-             xlab="position (in basepairs)",pch=c(".", NA,NA),
-             col=c('black','red','blue'),
+cbs.segs.raw <- cbs.segs[cbs.segs$correction=="raw", ]
+cbs.segs.arrayTV <- cbs.segs[cbs.segs$correction=="ArrayTV", ]
+
+marker.data <- GRanges(rep("chr14", nrow(wave.df)),
+		    IRanges(wave.df$position*1e6, width=1),
+		    numMarkers=1,
+		    seg.mean = wave.df$r,
+		    platform=wave.df$platform,
+		    correction=wave.df$wave.corr)
+marker.raw <- marker.data[marker.data$correction=="raw",]
+marker.arrayTV <- marker.data[marker.data$correction=="ArrayTV",]
+
+spikeIn <- IRanges(start=45396506,end=45537976)
+spikeinStart <- 45396506; spikeinEnd <- 45537976
+olaps1 <- findOverlaps(marker.raw, cbs.segs.raw, select="first")
+elementMetadata(marker.raw)$cbs.seg <- cbs.segs.raw$seg.mean[olaps1]
+olaps2 <- findOverlaps(marker.arrayTV, cbs.segs.arrayTV, select="first")
+elementMetadata(marker.arrayTV)$cbs.seg <- cbs.segs.arrayTV$seg.mean[olaps2]
+values(marker.raw)$spikeIn <- marker.raw$cbs.seg
+values(marker.arrayTV)$spikeIn <- marker.arrayTV$cbs.seg
+index1 <- which(is.na(findOverlaps(unlist(ranges(marker.raw)),
+				  spikeIn,select="first")))
+index2 <- which(is.na(findOverlaps(unlist(ranges(marker.arrayTV)),
+				  spikeIn,select="first")))
+values(marker.raw)$spikeIn[index1] <- NA
+values(marker.arrayTV)$spikeIn[index2] <- NA
+
+rawd <- as.data.frame(marker.raw)
+atvd <- as.data.frame(marker.arrayTV)
+rawd <- rbind(rawd, atvd)
+##rawd <- as.data.frame(raw.data)
+rawd$platform <- factor(rawd$platform, levels=c("Nimblegen",
+				       "Agilent", "Affymetrix"))
+rawd$correction <- factor(rawd$correction, levels=c("raw", "ArrayTV"))
+@
+
+
+View CBS lines through the spike in (expected copy number 2.5). Black
+points represent signal intensities for each probe. Red lines
+represent segmentation of the intensities (using the circular binary
+segmentaion algorithm) and blue lines represent a region of known copy
+number 2.5 (a subtle amplification). As in the previous figure, raw
+signal intensities appear immediately above the corrected intensities
+for each platform
+
+<<cbs2>>=
+p2 <- xyplot(seg.mean+cbs.seg+spikeIn~start/1e6|platform+correction, rawd,
+	     ylim=c(-1.5, 1.5),
+	     pch=".",
+	     xlim=c(spikeinStart/1e6-2.4,spikeinEnd/1e6+2.4),
+	     ylab="log R ratio",
+             xlab="position (Mb)",##pch=c(".", NA,NA),
+             col=c('gray40','black','blue'),
              distribute.type=TRUE,
-             type=c('p','l','l'),lwd=c(NA,1,3),
+             type=c('p','l','l'),lwd=c(NA,2,3),
              scales=list(y=list(tick.number=8)),
-             par.strip.text=list(cex=0.9), layout=c(1,6), as.table=TRUE)
+             par.strip.text=list(cex=0.9), layout=c(2,3), as.table=TRUE)
+p3 <- useOuterStrips(p2)
 @
 
-<<cbsfig,fig=TRUE>>=
-    print(p2)
+<<spikein,fig=TRUE, include=FALSE, width=8, height=6>>=
+print(p3)
 @
 
+\begin{figure}[h]
+  \begin{center}
+  \includegraphics[width=0.8\textwidth]{ArrayTV-spikein}
+  \caption{\label{fig:spikein} \comm{Some text describing the figure}}
+  \end{center}
+\end{figure}
+
+
+\section{Session Information}
 <<sessionInfo,echo=FALSE,results=tex>>=
     toLatex(sessionInfo())
 @
 
+\section*{References}
+\bibliography{refs}
 
 \end{document}
