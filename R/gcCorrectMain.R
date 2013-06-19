@@ -1,5 +1,5 @@
-gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
-			  increms,
+gcCorrectMain <- function(Ms, chr, starts, samplechr='',
+			  increms=0,
 			  maxwins,
 			  jittercorrection=FALSE,
 			  returnOnlyTV=FALSE,
@@ -19,8 +19,9 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 	narrays <- ncol(Ms)
 	if(is.null(providedGC)){ ##otherwise, its a vector of GC scores
 		uniqchrs <- unique(chr)
+                if (samplechr=='') samplechr <- uniqchrs
 		remainingChr <- uniqchrs[is.na(match(uniqchrs, samplechr))]
-
+                if(increms[1]==0) increms <- maxwins
 		nparts <- maxwins[1] / increms[1]
 		for(ii in seq_along(increms)){
 			## Eitan: why not stop("Bad increment values") ?
@@ -80,7 +81,11 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr, nodes,
 	##		rownames(result) <- paste(c(seq(increm, maxwin, increm), seq(increm2, maxwin2, increm2)), "bp", sep="")
 	##	}
 	if(!is.null(colnames(Ms))) colnames(result) <- colnames(Ms)
-	return(result)
+        if(is.list(priorFracWremaining)) names(priorFracWremaining) <- colnames(Ms)
+	resultList<-list(tvScore,optimalwins<-as.numeric(rownames(tvScore))[gmaxvalsInd],
+                         maxTVscores<-gmaxvals,gcVals<-priorFracWremaining, result)
+        names(resultList)<-c('tvScore','optimalWin','maxTVscore','GCvals','correctedVals')
+        return(resultList)
 }
 
 
