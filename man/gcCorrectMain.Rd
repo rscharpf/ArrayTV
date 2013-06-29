@@ -73,7 +73,8 @@ Eitan Halper-Stromberg
 	nodes <- 1
 	library(doMC)
 	registerDoMC(nodes)
-	## calculate tv scores in many windows and correct M values using the best window
+	## calculate tv scores in many windows and correct M values
+	## using the best window
 	nimcM1List <- gcCorrectMain(nimblegen[, "M", drop=FALSE],
 				    chr=rep("chr15",nrow(nimblegen)),
 				    starts=nimblegen[, "position"],
