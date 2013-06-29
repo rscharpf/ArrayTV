@@ -63,27 +63,32 @@ Optimal window finding was inspired by a similar concept applied to gc correctio
 Eitan Halper-Stromberg
 }
 \examples{
-path <- system.file("extdata", package="ArrayTV")
-load(file.path(path, "array_logratios.rda"))
-nimblegen[, "M"] <- nimblegen[, "M"]/1000
+	path <- system.file("extdata", package="ArrayTV")
+	load(file.path(path, "array_logratios.rda"))
+	nimblegen[, "M"] <- nimblegen[, "M"]/1000
 
-increms <- c(10,1000,100e3)
-wins <- c(100,10e3,1e6)
-## nodes may be set to the number of cpus available
-nodes=1
-library(doMC)
-registerDoMC(nodes)
-## calculate tv scores in many windows and correct M values using the best window
-nimcM1List<-gcCorrectMain(nimblegen[, "M",
-drop=FALSE],chr=rep("chr15",nrow(nimblegen)),starts=nimblegen[,
-"position"],increms=increms,maxwins=wins,build='hg18')
-tvScores<-nimcM1List[['tvScore']]
-winsorted<-as.numeric(rownames(tvScores)[order(tvScores,decreasing=TRUE)])
-logwinsorted<-log(as.numeric(winsorted),10)
-logwinsortdiff<-abs(logwinsorted[1]-logwinsorted)
-## correct M values a 2nd time using a different window size
-nimcM2List<-gcCorrect(nimcM1List[['correctedVals']],chr=rep("chr15",nrow(nimblegen)),starts=nimblegen[,
-"position"],maxwins=winsorted[logwinsortdiff>=1][1],build='hg18')
-
-## Refer to the vignette for details
+	increms <- c(10,1000,100e3)
+	wins <- c(100,10e3,1e6)
+	## nodes may be set to the number of cpus available
+	nodes <- 1
+	library(doMC)
+	registerDoMC(nodes)
+	## calculate tv scores in many windows and correct M values using the best window
+	nimcM1List <- gcCorrectMain(nimblegen[, "M", drop=FALSE],
+				    chr=rep("chr15",nrow(nimblegen)),
+				    starts=nimblegen[, "position"],
+				    increms=increms,
+				    maxwins=wins,
+				    build='hg18')
+	tvScores <- nimcM1List[['tvScore']]
+	winsorted <- as.numeric(rownames(tvScores)[order(tvScores,decreasing=TRUE)])
+	logwinsorted <- log(as.numeric(winsorted),10)
+	logwinsortdiff <- abs(logwinsorted[1]-logwinsorted)
+	## correct M values a 2nd time using a different window size
+	nimcM2List <- gcCorrect(nimcM1List[['correctedVals']],
+				chr=rep("chr15",nrow(nimblegen)),
+				starts=nimblegen[, "position"],
+				maxwins=winsorted[logwinsortdiff>=1][1],
+				build='hg18')
+	## Refer to the vignette for details
 }
