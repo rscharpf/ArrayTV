@@ -74,6 +74,7 @@ gcCorrectBafLrrList <- function(object, index.samples, providedGC=NULL,...){
 	if("returnOnlyTV" %in% names(list(...))){
 		only.tv <- list(...)[["returnOnlyTV"]]
 	} else only.tv <- FALSE
+	j <- 1
 	reslist <- foreach(j=index.list, .packages=.packages) %dopar% {
 		rr <- lapply(r, function(x, j) x[, j, drop=FALSE]/100, j=j)
 		R <- do.call(rbind, rr)

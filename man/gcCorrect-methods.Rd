@@ -3,6 +3,7 @@
 \alias{gcCorrect}
 \alias{gcCorrect-methods}
 \alias{gcCorrect,BafLrrSetList-method}
+\alias{gcCorrect,BafLrrSet-method}
 \alias{gcCorrect,BeadStudioSet-method}
 \alias{gcCorrect,matrix-method}
 \title{Methods for \code{gcCorrect} in Package \pkg{ArrayTV} }
@@ -17,7 +18,7 @@ Correct gc biases in array data for arrays stored as objects of an acceptable cl
     \item{}{\code{gcCorrect(object, ...)}:
 
       Methods have been defined for objects of class \code{matrix},
-      \code{BeadStudioSet}, and \code{BafLrrSetList}.
+      \code{BeadStudioSet}, \code{BafLrrSet}, and \code{BafLrrSetList}.
 
       Objects of class \code{BafLrrSetList} are containers for log R
       ratios and B allele frequencies (BAFs) stored by chromosome.  In
@@ -56,11 +57,10 @@ Correct gc biases in array data for arrays stored as objects of an acceptable cl
 }
 
 \seealso{\code{\linkS4class{BeadStudioSet}},
-  \code{\linkS4class{BafLrrSetList}}, \code{\link{gcCorrectMain}}}
+  \code{\linkS4class{BafLrrSetList}}, \code{\linkS4class{BafLrrSet}} \code{\link{gcCorrectMain}}}
 
 \references{
-  Benjamini Y, Speed TP. Summarizing and cor\
-  recting the GC content bias in high-throughput sequencing. Nucleic
+  Benjamini Y, Speed TP. Summarizing and correcting the GC content bias in high-throughput sequencing. Nucleic
   Acids Res 2012;40:e72
 }
 
@@ -87,6 +87,8 @@ winsorted<-as.numeric(rownames(tvScores)[order(tvScores,decreasing=TRUE)])
 logwinsorted<-log(as.numeric(winsorted),10)
 logwinsortdiff<-abs(logwinsorted[1]-logwinsorted)
 ## correct M values a 2nd time using a different window size
+
+
 nimcM2List<-gcCorrect(nimcM1List[['correctedVals']],chr=rep("chr15",nrow(nimblegen)),starts=nimblegen[,
 "position"],maxwins=winsorted[logwinsortdiff>=1][1],build='hg18')
 

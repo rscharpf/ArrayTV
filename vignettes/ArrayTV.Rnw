@@ -28,6 +28,7 @@
 \maketitle
 
 <<setup, echo=FALSE>>=
+library(ArrayTV)
 options(width=70)
 @
 
@@ -124,8 +125,10 @@ operator and we refer the user to the documentation for
 \Rfunction{gcCorrect} method.  Computing the GC content of the
 sequence for each marker requires that the appropriate BSgenome
 package is loaded.  For example, here the package
-\Rpackage{BSgenome.Hsapiens.UCSC.hg18} is loaded internally.
-The following codechunk is unevaluated.
+\Rpackage{BSgenome.Hsapiens.UCSC.hg18} is loaded internally.  The
+following (unevaluated) codechunk performs GC correction on the $M$
+values for the Nimblegen, Agilent, and Affymetrix platforms,
+respectively.
 
 <<tvscores,eval=FALSE>>=
 nimcM1List <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
@@ -207,7 +210,7 @@ yaxt="n",type="b",ylim=c(0,.1))
        \end{figure}
 
 
-\subsection*{view corrected  and uncorrected $M$ values}
+\subsection*{View corrected  and uncorrected $M$ values}
 Our GC-adjusted signal was computed when we called gcCorrect and is now stored in
 nimcM1List,agcM1List, and afcM1List. Here we create a dataframe to store corrected and
 uncorrected signal, ahead of plotting.
@@ -261,21 +264,23 @@ print(p2)
 
 \begin{figure}[t]
   \begin{center}
-  \includegraphics[width=0.8\textwidth]{ArrayTV-crossplatform}
+  \includegraphics[width=\textwidth]{ArrayTV-crossplatform}
   \caption{\label{fig:crossplatform} Comparison of $M$ values before and
     after \ArrayTV{} wave correction (rows) for three array
     platforms (columns).}
   \end{center}
 \end{figure}
 
-\section{view a SpikeIn}
-Use CBS to segment corrected and uncorrected signal within a region
-containing a known copy number amplification (expected copy number
-2.5).
+\section{View a SpikeIn}
+In this section, we use CBS to segment corrected and uncorrected
+signal within a region containing a known copy number amplification.
+The true $M$ value for the spike-in is 2.5, and our goal is to use CBS
+to recover the spike-in signal that is partly obscured by waves in the
+uncorrected $M$s.  The amplification was spiked in to each of the
+three array platforms discussed previously.  In the following
+codechunk, we collect the raw and GC-corrected $M$ values in a list
+object, and perform CBS segmentation on the elements of the list:
 <<cbs,eval=FALSE>>=
-
-
-
 if(require("DNAcopy")){
 	cbs.out <- data.frame()
 	cbs.segs <- list()
@@ -311,10 +316,17 @@ if(require("DNAcopy")){
 save(cbs.out, file="~/Software/ArrayTV/inst/extdata/cbs_out.rda")
 @
 
+As CBS segmentation of these genomes is time-consuming, we have saved
+the results from the above computation that can be loaded as follows:
+
 <<loadCBSsegs>>=
 load(file.path(path, "cbs_out.rda"))
 @
 %\subsection*{Parse the CBS output in preparation for plotting}
+
+To facilitate downstream analyses such as visualization of the
+results, we coerce the results from the CBS algorithm to an object of
+class \Robject{GRanges}.
 
 <<cbsResults>>=
 ids <- cbs.out$ID
@@ -385,13 +397,12 @@ rawd$correction <- factor(rawd$correction, levels=c("raw", "ArrayTV"))
 @
 
 
-View CBS lines through the spike in (expected copy number 2.5). Black
-points represent signal intensities for each probe. Red lines
-represent segmentation of the intensities (using the circular binary
-segmentaion algorithm) and blue lines represent a region of known copy
-number 2.5 (a subtle amplification). As in the previous figure, raw
-signal intensities appear immediately above the corrected intensities
-for each platform
+%View CBS lines through the spike in (expected copy number 2.5).
+Black points in Figure \ref{fig:spikein} represent signal intensities
+for each probe, and red line segments correspond to the segmentation
+of the intensities from CBS. The blue line segments demarcate the
+spike-in. As in the previous figure, raw signal intensities appear
+immediately above the corrected intensities for each platform
 
 <<cbs2>>=
 p2 <- xyplot(seg.mean+cbs.seg+spikeIn~start/1e6|platform+correction, rawd,

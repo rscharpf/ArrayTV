@@ -1,8 +1,4 @@
 export(gcCorrectMain)
-exportMethods(computeGC, gcCorrect)
-
-##
+exportMethods(gcCorrect)
 import(foreach)
-
-##
 importFrom(DNAcopy, segment, CNA)
