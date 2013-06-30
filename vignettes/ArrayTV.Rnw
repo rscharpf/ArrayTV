@@ -102,8 +102,9 @@ this case evaluated windows will be of sizes: 10,20,30,\ldots, 100,
 
 
 <<windows>>=
-increms <- c(10,1000,100e3)
+##increms <- c(10,1000,100e3)
 wins <- c(100,10e3,1e6)
+increms <- c(20, 2000, 200e3)
 @
 
 To enable parallelization, execute the following unevaluated code
@@ -131,35 +132,44 @@ following (unevaluated) codechunk performs GC correction on the $M$
 values for the Nimblegen, Agilent, and Affymetrix platforms,
 respectively.
 
-<<tvscores,eval=FALSE>>=
+%<<tvscores,eval=FALSE>>=
+<<tvscores>>=
+index <- which(nimblegen[, "position"] > 40e6 &
+	       nimblegen[, "position"] <= 80e6)
+nimblegen <- nimblegen[index, ]
 nimcM1List <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
-                        chr=rep("chr15", nrow(nimblegen)),
+			chr=rep("chr15", length(index)),
                         starts=nimblegen[, "position"],
                         increms=increms,
                         maxwins=wins,
                         build='hg18')
-
+index <- which(agilent[, "position"] > 40e6 &
+	       agilent[, "position"] <= 80e6)
+agilent <- agilent[index, ]
 agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
-                       chr=rep("chr15", nrow(agilent)),
+                       chr=rep("chr15", length(index)),
                        starts=agilent[, "position"],
                        increms=increms,
                        maxwins=wins,
                        build="hg18")
+index <- which(affymetrix[, "position"] > 40e6 &
+	       affymetrix[, "position"] <= 80e6)
+affymetrix <- affymetrix[index, ]
 afcM1List <- gcCorrect(affymetrix[, "M", drop=FALSE],
-                       chr=rep("chr15", nrow(affymetrix)),
-                       starts=affymetrix[,"position"],
+                       chr=rep("chr15", length(index)),
+                       starts=affymetrix[, "position"],
                        increms=increms,
                        maxwins=wins,
                        build="hg18")
 @
 
-<<saveTvScores,eval=FALSE,echo=FALSE>>=
-save(nimcM1List, agcM1List, afcM1List, file="~/Software/ArrayTV/inst/extdata/tvScoresAndCorrected.rda")
-@
+%<<saveTvScores,eval=FALSE,echo=FALSE>>=
+%save(nimcM1List, agcM1List, afcM1List, file="~/Software/ArrayTV/inst/extdata/tvScoresAndCorrected.rda")
+%@
 
 \noindent The above results have been previously computed and can be
 loaded from disk:
-<<loadtvscores>>=
+<<loadtvscores,eval=FALSE,echo=FALSE>>=
 load(file.path(system.file("extdata", package="ArrayTV"), "tvScoresAndCorrected.rda"))
 @
 
@@ -222,8 +232,10 @@ corrected and uncorrected signal, ahead of plotting.
 wave.df <- data.frame(position=c(rep(nimblegen[, "position"]/1e6, 2),
                       rep(agilent[, "position"]/1e6, 2),
                       rep(affymetrix[, "position"]/1e6,2)),
-		      r=c(nimblegen[, "M"],nimcM1List[['correctedVals']],
-                      agilent[,"M"],agcM1List[['correctedVals']],
+		      r=c(nimblegen[, "M"],
+		      nimcM1List[['correctedVals']],
+                      agilent[,"M"],
+		      agcM1List[['correctedVals']],
                       affymetrix[,"M"], afcM1List[['correctedVals']]),
 		      platform=rep(c(rep("Nimblegen", 2),
 		      rep("Agilent", 2),
@@ -249,7 +261,8 @@ before and after correction for the three platforms (Figure
     ## corrected signal, across chromosome 15. A smoothed loess line is drawn through each.
 require("lattice") && require("latticeExtra")
 p <- xyplot(r~position|platform+wave.corr, wave.df, pch=".", col="gray",
-	    ylim=c(-2,1.5), xlim=c(18,102),ylab="M", xlab="position (Mb) on chr15",
+	    ylim=c(-2,1.5), xlim=range(nimblegen[, "position"]/1e6),
+	    ylab="M", xlab="position (Mb) on chr15",
 	    scales=list(y=list(tick.number=8)),
 	    panel=function(x,y,subscripts,...){
                     panel.grid(lty=2)
@@ -282,12 +295,17 @@ signal within a region containing a known copy number amplification.
 The true $M$ value for the spike-in is 2.5, and our goal is to use CBS
 to recover the spike-in signal that is partly obscured by waves in the
 uncorrected $M$s.  The amplification was spiked in to each of the
-three array platforms discussed previously.  In the following
-codechunk, we collect the raw and GC-corrected $M$ values in a list
-object, and perform CBS segmentation on the elements of the list:
+three array platforms discussed previously.  As the segmentation of
+the data is used only for visualization and does not illustrate the
+functionality of this package, the following code chunk is static and
+not evaluated in this
+vignette.
+
+% collect the raw and GC-corrected $M$ values in
+%a list object, and perform CBS segmentation on the elements of the
+%list:
 <<cbs,eval=FALSE>>=
 if(require("DNAcopy")){
-	cbs.out <- data.frame()
 	cbs.segs <- list()
 	platforms <- c("Nimblegen", "Agilent", "Affymetrix")
 	correction <- c("raw", "ArrayTV")
@@ -414,7 +432,7 @@ immediately above the corrected intensities for each platform
 p2 <- xyplot(seg.mean+cbs.seg+spikeIn~start/1e6|platform+correction, rawd,
 	     ylim=c(-1.5, 1.5),
 	     pch=".",
-	     xlim=c(spikeinStart/1e6-2.4,spikeinEnd/1e6+2.4),
+	     xlim=c(spikeinStart/1e6-1,spikeinEnd/1e6+1),
 	     ylab="M",
              xlab="position (Mb)",##pch=c(".", NA,NA),
              col=c('gray40','black','blue'),

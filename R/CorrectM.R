@@ -37,8 +37,8 @@ CorrectM <- function(Ms,chr,starts,priorFracWremaining,narrays,
 		removeend <- segment.smoothed.CNA.object$output$loc.end[toremove]
 		removechr <- segment.smoothed.CNA.object$output$chrom[toremove]
 		removeAsRange <- GRanges(seqnames=removechr, ranges=IRanges(start=removestart, end=removeend))
-		##
-		tokeepLogical <- is.na(GenomicRanges::match(locsAsRange, removeAsRange,match.if.overlap=TRUE))
+		##tokeepLogical <- is.na(GenomicRanges::match(locsAsRange, removeAsRange,match.if.overlap=TRUE))
+		tokeepLogical <- is.na(findOverlaps(locsAsRange, removeAsRange, select="first"))
 		tokeep <- which(tokeepLogical)
 		toremove <- which(!tokeepLogical)
 		if(length(toremove) > length(tokeep)){
@@ -172,7 +172,8 @@ correctMLite <- function(gcFracBoth,
 		removechr <- segment.smoothed.CNA.object$output$chrom[toremove]
 		removeAsRange <- GRanges(seqnames=removechr, ranges=IRanges(start=removestart, end=removeend))
 		##
-		tokeepLogical <- is.na(GenomicRanges::match(locsAsRange, removeAsRange,match.if.overlap=TRUE))
+		##tokeepLogical <- is.na(GenomicRanges::match(locsAsRange, removeAsRange,match.if.overlap=TRUE))
+		tokeepLogical <- is.na(findOverlaps(locsAsRange, removeAsRange, select="first"))
 		tokeep <- which(tokeepLogical)
 		toremove <- which(!tokeepLogical)
 		if(length(toremove) > length(tokeep)){
