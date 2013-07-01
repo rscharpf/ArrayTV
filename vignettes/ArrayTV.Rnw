@@ -33,15 +33,15 @@ options(width=70)
 @
 
 \begin{abstract}
-\ArrayTV{} is a GC correction algorithm for microarray data designed
+  \ArrayTV{} is a GC correction algorithm for microarray data designed
   to mitigate the appearance of waves.  This work is inspired by a
   method for mitigating waves in sequencing data
   \cite{Benjamini2012}. We find the genomic window for computing GC
   that best captures the dependence of signal intensity on GC content
-  for each array using the total variance distance statistic (TV
-  score). The correction each probe receives is the mean signal
-  intensity of all probes sharing the same local GC. We center windows
-  at the starting position of each probe.
+  for each array using a score similar to the total variance (TV)
+  statistic defined in \cite{Benjamini2012}. The correction each probe
+  receives is the mean signal intensity of all probes sharing the same
+  local GC. We center windows at the starting position of each probe.
 \end{abstract}
 
 \section{Adjusting copy number estimates for GC waves}
@@ -84,44 +84,30 @@ affymetrix[, "M"] <- affymetrix[, "M"]/1000
 nimblegen[, "M"] <- nimblegen[, "M"]/1000
 @
 
-We will generate total variance scores (TV scores) for 30 window sizes
-to determine the optimal window(s) for GC correction. Again, we assume
-that the positions denote the start location of each probe. %If you use
-%this package with microarray data where probe locations are reported
-%in the middle of the probes, you should adjust these so that they
-%represent the start positions (i.e middle probe locs - probelength/2).
-While our analysis is limited to chromosome 15, in practice we
-recommend implementing the wave correction on all autosomes
-simultaneously.  Next, we specify \Robject{increms} and \Robject{wins}
-to indicate the size of the genomic intervals surrounding the markers
-from which GC content will be computed. Here each of the 3 entries in
-the vector \Robject{increms} specifies an increment size, with the
-corresponding entries in \Robject{wins} specifying the maximum window
-size to evaluate for that increment. For example, the following code
-specifies three series of windows to evaluate:
-
+To determine the optimal window(s) for GC correction, we generate TV
+scores for several window sizes. Again, we assume that the positions
+denote the start location of each probe. While our analysis in this
+vignette is limited to chromosome 15 for computational reasons, in
+practice we recommend implementing the wave correction on all
+autosomes simultaneously.  We specify the windows to search by
+providing two vectors that indicate the maximum window size and the
+increment:
 
 <<windows>>=
 max.window <- c(100,10e3,1e6)
 increms <- c(20, 2000, 200e3)
 @
 
-\noindent The first series of windows has maximum window size of 100
-and increment value 20, indicating that windows 20, 40, \ldots, and
-100 will be evaluated. For the second series, the maximum windowis
-10e3 and windows 2000, 4000, \ldots, 10e3 will be evaluated. Hence,
-for each series the number of windows to be evaluated is 5.  When
-multiple series are specified, the same number of windows must be
-evaluated.  When multiple cores are available, computation can proceed
-in parallel for computing the GC content for the above windows.  To
-enable parallelization across 8 cores using the multicore package, one
-could execute the following (unevaluated) code chunk:
-
-<<enablePar,eval=FALSE>>=
-nodes <- 8
-library(doMC)
-registerDoMC(nodes)
-@
+\noindent The above specification indicates that we will compute TV
+scores for three sequential window sizes as follows.  The first series
+of windows has maximum window size of 100 (\texttt{max.window[1]}) and
+increment value 20 (\texttt{increms[1]}), indicating that windows 20,
+40, \ldots, and 100 will be evaluated. For the second series, the
+maximum window is 10e3 (\texttt{max.window[2]}) and windows 2000,
+4000, \ldots, 10e3 will be evaluated since the increment value is 2000
+(\texttt{increms[2]}). For each of the three series, the number of
+windows to be evaluated is 5.  The sequence for each series must have
+the same length.
 
 \paragraph{Evaluating TV scores as a function of window size for
   computing GC.} The class of the first argument to the
@@ -160,11 +146,12 @@ afcM1List <- gcCorrect(affymetrix[, "M", drop=FALSE],
                        build="hg18")
 @
 
-To plot the data, we concatenate the results from each platform into a
-list and pass the list into the \Rfunction{plotTV} function. This
-function uses the \Robject{increms} and \Robject{max.window} vectors to
-organize plotting based on the size of the genomic windows used to
-compute GC (small, medium, and large)
+To plot the TV score for each of the windows evaluated, we concatenate
+the results from each platform into a list and pass the list into the
+\Rfunction{plotTV} function (below). This function uses the
+\Robject{increms} and \Robject{max.window} vectors to organize
+plotting based on the size of the genomic windows used to compute GC
+(small, medium, and large).
 
 
 <<tvscorefig,fig=TRUE,include=FALSE, width=6, height=4>>=
@@ -276,20 +263,18 @@ print(p2)
 \end{figure}
 
 \section{View a SpikeIn}
-In this section, we use CBS to segment corrected and uncorrected
-signal within a region containing a known copy number amplification.
-The true $M$ value for the spike-in is 2.5, and our goal is to use CBS
-to recover the spike-in signal that is partly obscured by waves in the
-uncorrected $M$s.  The amplification was spiked in to each of the
-three array platforms discussed previously.  As the segmentation of
-the data is used only for visualization and does not illustrate the
-functionality of this package, the following code chunk is static and
-not evaluated in this
-vignette.
+To demonstrate that the GC-correction does not remove true CNV
+signals, we illustrate our approach on a spike-in datasets containing
+a small amplification.  While the signal for the spike-in is subtle,
+the main point here is that the small inflection is not effected by
+the GC correction.  The amplification was spiked in to each of the
+three array platforms as described in Halper-Stromberg {\it et al.}
+\cite{Halper-Stromberg2011}.  As the segmentation of the data using
+circular binary segmentation (CBS; \cite{Olshen2004}) is only for
+visualization and is not critical to the functionality of this
+package, the following code chunk is static (not evaluated) to reduce
+computation:
 
-% collect the raw and GC-corrected $M$ values in
-%a list object, and perform CBS segmentation on the elements of the
-%list:
 <<cbs,eval=FALSE>>=
 if(require("DNAcopy")){
 	cbs.segs <- list()
@@ -325,9 +310,9 @@ if(require("DNAcopy")){
 save(cbs.out, file="~/Software/ArrayTV/inst/extdata/cbs_out.rda")
 @
 
-As CBS segmentation of these genomes is time-consuming, we have saved
-the results from the above computation and load these results into our
-workspace as follows:
+%As CBS segmentation of these genomes is time-consuming,
+We load the results from the above computation into our workspace as
+follows:
 
 <<loadCBSsegs>>=
 load(file.path(path, "cbs_out.rda"))
@@ -340,18 +325,14 @@ class \Robject{GRanges}.
 
 <<cbsResults>>=
 ids <- cbs.out$ID
-
 ## create vectors indicating corrected/uncorrected and platform for each cbs segment
-
 platforms <- gsub("_raw", "", ids)
 platforms <- gsub("_ArrayTV", "", platforms)
 correction <- gsub("Nimblegen_", "", ids)
 correction <- gsub("Affymetrix_", "", correction)
 correction <- gsub("Agilent_", "", correction)
-
 ## store cbs segments in a GRanges object with designations for corrected/uncorrected
 ## and platform
-
 cbs.segs <- GRanges(rep("chr14", nrow(cbs.out)),
 		    IRanges(cbs.out$loc.start, cbs.out$loc.end),
 		    numMarkers=cbs.out$num.mark,
@@ -359,45 +340,39 @@ cbs.segs <- GRanges(rep("chr14", nrow(cbs.out)),
 		    platform = platforms,
 		    correction=correction)
 ## separate corrected and uncorrected cbs segments int separate objects
-
 cbs.segs.raw <- cbs.segs[cbs.segs$correction=="raw", ]
 cbs.segs.arrayTV <- cbs.segs[cbs.segs$correction=="ArrayTV", ]
 
 ## create GRanges objects with M values, platform, and
 ## corrected/uncorrected designation
-
 marker.data <- GRanges(rep("chr14", nrow(wave.df)),
 		    IRanges(wave.df$position*1e6, width=1),
 		    numMarkers=1,
 		    seg.mean = wave.df$r,
 		    platform=wave.df$platform,
 		    correction=wave.df$wave.corr)
-
 marker.raw <- marker.data[marker.data$correction=="raw",]
 marker.arrayTV <- marker.data[marker.data$correction=="ArrayTV",]
 
 ## populate cbs.seg metadata column by joining M values with CBS segments by location
-
 olaps1 <- findOverlaps(marker.raw, cbs.segs.raw, select="first")
-elementMetadata(marker.raw)$cbs.seg <- cbs.segs.raw$seg.mean[olaps1]
+marker.raw$cbs.seg <- cbs.segs.raw$seg.mean[olaps1]
 olaps2 <- findOverlaps(marker.arrayTV, cbs.segs.arrayTV, select="first")
-elementMetadata(marker.arrayTV)$cbs.seg <- cbs.segs.arrayTV$seg.mean[olaps2]
+marker.arrayTV$cbs.seg <- cbs.segs.arrayTV$seg.mean[olaps2]
 
 ## populate SpikeIn metadata column if a marker falls within the Spiked-in region
-
 spikeIn <- IRanges(start=45396506,end=45537976)
 spikeinStart <- 45396506; spikeinEnd <- 45537976
-values(marker.raw)$spikeIn <- marker.raw$cbs.seg
-values(marker.arrayTV)$spikeIn <- marker.arrayTV$cbs.seg
+marker.raw$spikeIn <- marker.raw$cbs.seg
+marker.arrayTV$spikeIn <- marker.arrayTV$cbs.seg
 index1 <- which(is.na(findOverlaps(unlist(ranges(marker.raw)),
 				  spikeIn,select="first")))
 index2 <- which(is.na(findOverlaps(unlist(ranges(marker.arrayTV)),
 				  spikeIn,select="first")))
-values(marker.raw)$spikeIn[index1] <- NA
-values(marker.arrayTV)$spikeIn[index2] <- NA
+marker.raw$spikeIn[index1] <- NA
+marker.arrayTV$spikeIn[index2] <- NA
 
 ## put GRanges objects into a dataframe ahead of plotting
-
 rawd <- as.data.frame(marker.raw)
 atvd <- as.data.frame(marker.arrayTV)
 rawd <- rbind(rawd, atvd)
@@ -441,6 +416,23 @@ print(p3)
     platforms (columns) in the vicinity of a known amplification of copy number 2.5 (blue).}
   \end{center}
 \end{figure}
+
+
+\section{Parallelization}
+
+When multiple cores are available, computation can proceed in parallel
+for computing the GC content for the various window sizes specified.
+To enable parallelization across 8 cores using the
+\Rpackage{multicore} package, one could execute the following
+(unevaluated) code chunk prior to calling the \Rfunction{gcCorrect}
+function:
+
+<<enablePar,eval=FALSE>>=
+nodes <- 8
+library(doMC)
+registerDoMC(nodes)
+@
+
 
 
 \section{Session Information}
