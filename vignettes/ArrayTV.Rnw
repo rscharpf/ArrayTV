@@ -53,23 +53,24 @@ rows indexing markers and columns indexing samples, as well as more
 complex data structures commonly used to process Affymetrix and
 Illumina platforms made available in the \Rpackage{oligoClasses}
 package.  In this vignette, we illustrate our approach with a single
-female lymphoblastoid cell line sample assayed on the Agilent 1M , Affymetrix 2.7M, and NimbleGen 2.1M platforms
-(available in full from http://rafalab.jhsph.edu/cnvcomp, spike-in tube 2)\cite{Halper-Stromberg2011}.
-For each platform, we provide a
+female lymphoblastoid cell line sample assayed on the Agilent 1M ,
+Affymetrix 2.7M, and NimbleGen 2.1M platforms (available in full from
+http://rafalab.jhsph.edu/cnvcomp, spike-in tube
+2)\cite{Halper-Stromberg2011}.  For each platform, we provide a
 matrix.  The rows of the matrix correspond to markers on chromosome 15
 and the columns correspond to the physical position of the first
 nucleotide of the marker using UCSC build hg18 (note: for genotyping
 arrays, the position should be adjusted to the start of the marker and
-not the location of the SNP) and preprocessed signal intensities that we expect to be
-proportional to the copy number as well as sequence artifacts such as
-GC content. Agilent and NimbleGen signal intensities
-were preprocessed by taking the log ratio of loess normalized raw signal. Affymetrix performed their own
-preprocessing to obtain log R ratios.
-Hereafter, we refer to the preprocessed signal as
-\textit{M} values.  To keep the size of this package small, we provide
-the $M$ values as integers ($M \times 1000$). In the following code,
-we load the data for each platform, inspect the first few rows, and
-transform the $M$ values for each platform to the original scale.
+not the location of the SNP) and preprocessed signal intensities that
+we expect to be proportional to the copy number as well as sequence
+artifacts such as GC content. Agilent and NimbleGen signal intensities
+were preprocessed by taking the log ratio of loess normalized raw
+signal. Affymetrix performed their own preprocessing to obtain log R
+ratios.  Hereafter, we refer to the preprocessed signal as \textit{M}
+values.  To keep the size of this package small, we provide the $M$
+values as integers ($M \times 1000$). In the following code, we load
+the data for each platform, inspect the first few rows, and transform
+the $M$ values for each platform to the original scale.
 
 <<loaddata>>=
 library(ArrayTV)
@@ -89,29 +90,35 @@ that the positions denote the start location of each probe. %If you use
 %this package with microarray data where probe locations are reported
 %in the middle of the probes, you should adjust these so that they
 %represent the start positions (i.e middle probe locs - probelength/2).
-While our analysis is limited to chromosome 15 for practical
-constraints, in practice we recommend implementing the wave correction
-on all autosomes simultaneously.  Next, we specify \Robject{increms}
-and \Robject{wins} to indicate the size of the genomic intervals
-surrounding the markers from which GC content will be computed. Here
-each of the 3 entries in the vector \Robject{increms} specifies an
-increment size, with the corresponding entries in \Robject{wins}
-specifying the maximum window size to evaluate for that increment. In
-this case evaluated windows will be of sizes: 10,20,30,\ldots, 100,
-1e3, 2e3, 3e3, \ldots 10e3, 1e5, 2e5, 3e5, \ldots, 1e6
+While our analysis is limited to chromosome 15, in practice we
+recommend implementing the wave correction on all autosomes
+simultaneously.  Next, we specify \Robject{increms} and \Robject{wins}
+to indicate the size of the genomic intervals surrounding the markers
+from which GC content will be computed. Here each of the 3 entries in
+the vector \Robject{increms} specifies an increment size, with the
+corresponding entries in \Robject{wins} specifying the maximum window
+size to evaluate for that increment. For example, the following code
+specifies three series of windows to evaluate:
 
 
 <<windows>>=
-##increms <- c(10,1000,100e3)
-wins <- c(100,10e3,1e6)
+max.window <- c(100,10e3,1e6)
 increms <- c(20, 2000, 200e3)
 @
 
-To enable parallelization, execute the following unevaluated code
-chunk. Parallelization is by chromosome for calculation of GC content
-in each window and by array for calculation of correction values.
+\noindent The first series of windows has maximum window size of 100
+and increment value 20, indicating that windows 20, 40, \ldots, and
+100 will be evaluated. For the second series, the maximum windowis
+10e3 and windows 2000, 4000, \ldots, 10e3 will be evaluated. Hence,
+for each series the number of windows to be evaluated is 5.  When
+multiple series are specified, the same number of windows must be
+evaluated.  When multiple cores are available, computation can proceed
+in parallel for computing the GC content for the above windows.  To
+enable parallelization across 8 cores using the multicore package, one
+could execute the following (unevaluated) code chunk:
 
 <<enablePar,eval=FALSE>>=
+nodes <- 8
 library(doMC)
 registerDoMC(nodes)
 @
@@ -128,87 +135,66 @@ operator and we refer the user to the documentation for
 sequence for each marker requires that the appropriate BSgenome
 package is loaded.  For example, here the package
 \Rpackage{BSgenome.Hsapiens.UCSC.hg18} is loaded internally.  The
-following (unevaluated) codechunk performs GC correction on the $M$
-values for the Nimblegen, Agilent, and Affymetrix platforms,
-respectively.
+following codechunk performs GC correction on the $M$ values for the
+Nimblegen, Agilent, and Affymetrix platforms, respectively, for the
+windows specified previously.
 
-%<<tvscores,eval=FALSE>>=
 <<tvscores>>=
-index <- which(nimblegen[, "position"] > 40e6 &
-	       nimblegen[, "position"] <= 80e6)
-nimblegen <- nimblegen[index, ]
 nimcM1List <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
-			chr=rep("chr15", length(index)),
+			chr=rep("chr15", nrow(nimblegen)),
                         starts=nimblegen[, "position"],
                         increms=increms,
-                        maxwins=wins,
+                        maxwins=max.window,
                         build='hg18')
-index <- which(agilent[, "position"] > 40e6 &
-	       agilent[, "position"] <= 80e6)
-agilent <- agilent[index, ]
 agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
-                       chr=rep("chr15", length(index)),
+                       chr=rep("chr15", nrow(agilent)),
                        starts=agilent[, "position"],
                        increms=increms,
-                       maxwins=wins,
+                       maxwins=max.window,
                        build="hg18")
-index <- which(affymetrix[, "position"] > 40e6 &
-	       affymetrix[, "position"] <= 80e6)
-affymetrix <- affymetrix[index, ]
 afcM1List <- gcCorrect(affymetrix[, "M", drop=FALSE],
-                       chr=rep("chr15", length(index)),
+                       chr=rep("chr15", nrow(affymetrix)),
                        starts=affymetrix[, "position"],
                        increms=increms,
-                       maxwins=wins,
+                       maxwins=max.window,
                        build="hg18")
-@
-
-%<<saveTvScores,eval=FALSE,echo=FALSE>>=
-%save(nimcM1List, agcM1List, afcM1List, file="~/Software/ArrayTV/inst/extdata/tvScoresAndCorrected.rda")
-%@
-
-\noindent The above results have been previously computed and can be
-loaded from disk:
-<<loadtvscores,eval=FALSE,echo=FALSE>>=
-load(file.path(system.file("extdata", package="ArrayTV"), "tvScoresAndCorrected.rda"))
 @
 
 To plot the data, we concatenate the results from each platform into a
 list and pass the list into the \Rfunction{plotTV} function. This
-function uses the \Robject{increms} and \Robject{wins} vectors to
+function uses the \Robject{increms} and \Robject{max.window} vectors to
 organize plotting based on the size of the genomic windows used to
 compute GC (small, medium, and large)
 
 
 <<tvscorefig,fig=TRUE,include=FALSE, width=6, height=4>>=
 plotTV<- function(tvScoreList,increms,maxwins,windowsize,cols,...){
-  for(ii in seq_along(increms)){
-    if(!is.null(tvScoreList[['tvScore']])) tvScoreList <- list(tvScoreList)
-    for(jj in seq_along(tvScoreList)){
-      toplot<-tvScoreList[[jj]][['tvScore']][match(seq(increms[ii],maxwins[ii],increms[ii]),
-        as.numeric(rownames(tvScoreList[[jj]][['tvScore']]))),,drop=FALSE]
-      if(jj == 1){
-        matplot(rownames(toplot),toplot,
-        col=cols[jj],...)
-      }else{
-        matpoints(rownames(toplot),toplot,col=cols[jj],...)
-      }
-
-      if(ii==1){
-        axis(2, at=pretty(c(0,0.1), 6), outer=TRUE)
-        legend('top',legend=c('NimbleGen','Agilent','Affy'),
-        col=c('blue','green','red'),pch=20)
-      }
-    }
-
-  }
+	for(ii in seq_along(increms)){
+		if(!is.null(tvScoreList[['tvScore']])) tvScoreList <- list(tvScoreList)
+		for(jj in seq_along(tvScoreList)){
+			toplot <- tvScoreList[[jj]][['tvScore']][match(seq(increms[ii],maxwins[ii],increms[ii]),
+								       as.numeric(rownames(tvScoreList[[jj]][['tvScore']]))),,drop=FALSE]
+			if(jj == 1){
+				matplot(rownames(toplot),toplot,
+					col=cols[jj],...)
+			}else{
+				matpoints(rownames(toplot),toplot,col=cols[jj],...)
+			}
+			if(ii==1){
+				axis(2, at=pretty(c(0,0.1), 6), outer=TRUE)
+				legend('top',legend=c('NimbleGen','Agilent','Affy'),
+				       col=c('blue','green','red'),pch=20)
+			}
+		}
+	}
 }
-
-par(mfrow=c(1,3), mar=c(2.5,0.05,1.6,0.05), mgp=c(1.5,.5,0),
+par(mfrow=c(1,3), mar=c(2.5,0.05,1.6,0.05),
+    mgp=c(1.5,.5,0),
     oma=c(0,4,4,0), las=1)
 windowsize <- c('small','medium','large')
-plotTV(list(nimcM1List,agcM1List,afcM1List),increms,wins,windowsize,
-       c('blue','green','red'),pch=20,cex=2,ylab='tv score',
+plotTV(list(nimcM1List,agcM1List,afcM1List),
+       increms, max.window, windowsize,
+       c('blue','green','red'), pch=20, cex=2, ylab='tv score',
        xlab="window extension from center",
        yaxt="n",type="b",ylim=c(0,.1))
 @
