@@ -1,4 +1,4 @@
 export(gcCorrectMain)
 exportMethods(gcCorrect)
-import(foreach)
+import(foreach, oligoClasses, methods)
 importFrom(DNAcopy, segment, CNA)

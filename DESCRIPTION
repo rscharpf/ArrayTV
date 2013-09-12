@@ -1,17 +1,16 @@
 Package: ArrayTV
-Version: 1.99.0
+Version: 0.99.0
 Title: Implementation of wave correction for arrays
 Date: 2012-07-09
 Author: Eitan Halper-Stromberg
-Maintainer: Eitan Halper-Stromberg <ehalper2@jhmi.edu>
-Description: Wave correction for genotyping arrays
+Maintainer: Eitan Halper-Stromberg <Eitan177@gmail.com>
+Description: Wave correction for genotyping and copy number arrays
 License: GPL (>= 2)
 LazyLoad: yes
-Depends: R (>= 2.14),GenomicRanges, Biostrings,
-	 BSgenome, methods, oligoClasses (>= 1.21.3)
-Imports: grDevices, foreach, DNAcopy
-Suggests: RColorBrewer, BSgenome.Hsapiens.UCSC.hg18,BSgenome.Hsapiens.UCSC.hg19, lattice
-Enhances: doMC
+Depends: R (>= 2.14), methods, oligoClasses (>= 1.21.3)
+Imports: foreach, DNAcopy 
+Suggests: RColorBrewer, BSgenome.Hsapiens.UCSC.hg18,BSgenome.Hsapiens.UCSC.hg19, lattice, latticeExtra, RUnit, BiocGenerics
+Enhances: doMC,doMPI, doSNOW, doParallel
 Collate: AllGenerics.R
          calctvScore.R
 	 computeGC.R

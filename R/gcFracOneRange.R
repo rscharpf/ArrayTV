@@ -17,5 +17,5 @@ gcFracOneRange<-function(schr,starts,increm,maxwin,verbose=FALSE){
     gcFracbackwards1 <- pregcFrac[startindbackwards]
     gcFracbackwards1[is.na(gcFracbackwards1)] <- 0
 
-    return((gcFrac1+gcFracbackwards1)/2)
+    return(round((gcFrac1+gcFracbackwards1)/2,3))
 }

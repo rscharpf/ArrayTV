@@ -10,7 +10,7 @@ getGCinBestWindowGenome <- function(gcFracBoth, starts, nparts,
 		## maximum tv score window
 		maxuse1 <- gmaxvalsInd[i]
 
-		priorFrac <- ArrayTV:::priorFracs(gcFracBoth,maxuse1,nparts,tvScore,increms)
+		priorFrac <- priorFracs(gcFracBoth,maxuse1,nparts,tvScore,increms)
 
 		if(length(remainingChr)==0){
 			priorFracWremaining <- priorFrac
@@ -19,7 +19,7 @@ getGCinBestWindowGenome <- function(gcFracBoth, starts, nparts,
 			forwardExtend <- as.numeric(rownames(tvScore)[maxuse1])
 			reverseExtend <- forwardExtend
 
-			priorFracWremaining <- ArrayTV:::priorFracsRestOfGenome(forwardExtend,reverseExtend,remainingChr,starts,chr)
+			priorFracWremaining <- priorFracsRestOfGenome(forwardExtend,reverseExtend,remainingChr,starts,chr)
 			if(verbose) print(paste('forward extend',forwardExtend,'reverse extend',reverseExtend))
 
 			priorFracWremaining[chr %in% samplechr] <- priorFrac

@@ -69,6 +69,8 @@ Correct gc biases in array data for arrays stored as objects of an acceptable cl
 \keyword{smooth}
 
 \examples{
+### Example with 2 iterations of correction
+\dontrun{
 path <- system.file("extdata", package="ArrayTV")
 load(file.path(path, "array_logratios.rda"))
 nimblegen[, "M"] <- nimblegen[, "M"]/1000
@@ -96,7 +98,7 @@ nimcM2List<-gcCorrect(nimcM1List[['correctedVals']],chr=rep("chr15",nrow(nimbleg
 
 ## Example using a list container (BafLrrSetList) containing log R
 ## ratios and B allele frequencies
-\dontrun{
+
 	if(require(crlmm) && require(ff)){
 		data(cnSetExample, package="crlmm")
 		brList <- constructBafLrrSetListFrom(cnSetExample)

@@ -74,6 +74,11 @@ the $M$ values for each platform to the original scale.
 
 <<loaddata>>=
 library(ArrayTV)
+### parallelization will be discussed later but for now we provide the following
+### two commands to avoid warnings
+library(doMC)
+registerDoMC(1)
+
 path <- system.file("extdata", package="ArrayTV")
 load(file.path(path, "array_logratios.rda"))
 head(agilent)
@@ -122,25 +127,31 @@ sequence for each marker requires that the appropriate BSgenome
 package is loaded.  For example, here the package
 \Rpackage{BSgenome.Hsapiens.UCSC.hg18} is loaded internally.  The
 following codechunk performs GC correction on the $M$ values for the
-Nimblegen, Agilent, and Affymetrix platforms, respectively, for the
+NimbleGen, Agilent, and Affymetrix platforms, respectively, for the
 windows specified previously.
 
-<<tvscores>>=
+<<tvscoresNim,eval=FALSE>>=
 nimcM1List <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
 			chr=rep("chr15", nrow(nimblegen)),
                         starts=nimblegen[, "position"],
                         increms=increms,
                         maxwins=max.window,
                         build='hg18')
-agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
-                       chr=rep("chr15", nrow(agilent)),
-                       starts=agilent[, "position"],
-                       increms=increms,
-                       maxwins=max.window,
-                       build="hg18")
 afcM1List <- gcCorrect(affymetrix[, "M", drop=FALSE],
                        chr=rep("chr15", nrow(affymetrix)),
                        starts=affymetrix[, "position"],
+                       increms=increms,
+                       maxwins=max.window,
+                       build="hg18")
+@
+<<tvscores>>=
+## We load the corrected NimbleGen values computed during unit-testing and Affy
+## values, pre-computed, to save time
+load(file=file.path(path,"nimcM1List.rda"))
+load(file=file.path(path,"afcM1List.rda"))
+agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
+                       chr=rep("chr15", nrow(agilent)),
+                       starts=agilent[, "position"],
                        increms=increms,
                        maxwins=max.window,
                        build="hg18")
@@ -160,11 +171,12 @@ tvscores <- do.call("rbind", lapply(results, "[[", "tvScore"))[, 1]
 tv.df <- data.frame(tv=tvscores, platform=rep(c("NimbleGen", "Agilent", "Affy 6.0"), each=15),
 		    window=c(seq(20, 100, 20),
 		    seq(2000, 10e3, 2e3), seq(2e5, 1e6, 2e5))*2)
-op <- par()
+op <- par(no.readonly = TRUE)
 par(las=1, mar=c(6, 4, 3, 2)+0.1)
 with(tv.df, plot(log10(window), tv, pch=20, col=tv.df$platform,
 		 xaxt="n", xlab="window (bp)", ylab="TV score", cex=1.2))
-lapply(split(tv.df, tv.df$platform), function(x) points(log10(x$window), x$tv, type="l", col=x$platform, lwd=1.5))
+invisible(lapply(split(tv.df, tv.df$platform), function(x)
+                  points(log10(x$window),x$tv, type="l",col=x$platform, lwd=1.5)))
 axis(1, at=log10(tv.df$window), labels=FALSE) #labels=FALSE, tick=TRUE)a
 text(x=log10(tv.df$window), par("usr")[3]-0.005,
      labels=tv.df$window,
@@ -220,6 +232,8 @@ wave.df <- data.frame(position=c(rep(nimblegen[, "position"]/1e6, 2),
 wave.df$platform <- factor(wave.df$platform, levels=c("Nimblegen",
 					      "Agilent", "Affymetrix"))
 wave.df$wave.corr <- factor(wave.df$wave.corr, levels=c("raw", "ArrayTV"))
+## remove some points to make subsequent figure smaller
+wave.df <- wave.df[seq(1,nrow(wave.df),4),]
 @
 
 We use the \R{} package \Rpackage{lattice} to visualize the $M$ values
@@ -227,7 +241,8 @@ before and after correction for the three platforms (Figure
 \ref{fig:crossplatform})
 <<makewavefig>>=
     ## For each of the 3 example platforms, the uncorrected signal appears immediately above the
-    ## corrected signal, across chromosome 15. A smoothed loess line is drawn through each.
+    ## corrected signal, across chromosome 15. A smoothed loess line may be drawn through each
+    ## by uncommenting the commented line in the xyplot function
 require("lattice") && require("latticeExtra")
 p <- xyplot(r~position|platform+wave.corr, wave.df, pch=".", col="gray",
 	    ylim=c(-2,1.5), xlim=range(nimblegen[, "position"]/1e6),
@@ -237,7 +252,7 @@ p <- xyplot(r~position|platform+wave.corr, wave.df, pch=".", col="gray",
                     panel.grid(lty=2)
                     panel.xyplot(x, y, ...)
                     panel.abline(h=0)
-                    panel.loess(x, y, span=1/20, lwd=2, col="black")
+                    ## panel.loess(x, y, span=1/20, lwd=2, col="black")
 	    }, par.strip.text=list(cex=0.9),
 	    layout=c(2,3),
 	    as.table=TRUE)
@@ -295,7 +310,8 @@ if(require("DNAcopy")){
 				    startsUse[toUse],
 				    data.type="logratio",
 				    paste(platforms[i], correction[j], sep="_"))
-			cbs.segs[[k]] <- segment(cna1, verbose=1,min.width = 5)
+                        smooth.cna1 <- smooth.CNA(cna1)
+			cbs.segs[[k]] <- segment(smooth.cna1, verbose=1,min.width = 5)
 		}
             }
 	cbs.out <- do.call("rbind", lapply(cbs.segs, "[[", "output"))
@@ -303,14 +319,14 @@ if(require("DNAcopy")){
 @
 
 <<saveCBSsegs,eval=FALSE,echo=FALSE>>=
-save(cbs.out, file="~/Software/ArrayTV/inst/extdata/cbs_out.rda")
+save(cbs.out, file=file.path(path,"cbs_out.rda"))
 @
 
 %As CBS segmentation of these genomes is time-consuming,
 We load the results from the above computation into our workspace as
 follows:
 
-<<loadCBSsegs>>=
+<<loadCBSsegs,eval=TRUE>>=
 load(file.path(path, "cbs_out.rda"))
 @
 %\subsection*{Parse the CBS output in preparation for plotting}
@@ -375,13 +391,15 @@ rawd <- rbind(rawd, atvd)
 rawd$platform <- factor(rawd$platform, levels=c("Nimblegen",
 				       "Agilent", "Affymetrix"))
 rawd$correction <- factor(rawd$correction, levels=c("raw", "ArrayTV"))
+## remove some points to make subsequent figure smaller
+rawd <- rawd[seq(1,nrow(rawd),2),]
 @
 
 
 %View CBS lines through the spike in (expected copy number 2.5).
 Black points in Figure \ref{fig:spikein} represent signal intensities
 for each probe, and red line segments correspond to the segmentation
-of the intensities from CBS. The blue line segments demarcate the
+of the intensities from CBS. The red line segments demarcate the
 spike-in. As in the previous figure, raw signal intensities appear
 immediately above the corrected intensities for each platform
 
@@ -389,10 +407,10 @@ immediately above the corrected intensities for each platform
 p2 <- xyplot(seg.mean+cbs.seg+spikeIn~start/1e6|platform+correction, rawd,
 	     ylim=c(-1.5, 1.5),
 	     pch=".",
-	     xlim=c(spikeinStart/1e6-1,spikeinEnd/1e6+1),
+	     xlim=c(spikeinStart/1e6-1.5,spikeinEnd/1e6+1.5),
 	     ylab="M",
              xlab="position (Mb)",##pch=c(".", NA,NA),
-             col=c('gray40','black','blue'),
+             col=c('gray','black','red'),
              distribute.type=TRUE,
              type=c('p','l','l'),lwd=c(NA,2,3),
              scales=list(y=list(tick.number=8)),
@@ -409,7 +427,7 @@ print(p3)
   \includegraphics[width=0.8\textwidth]{ArrayTV-spikein}
   \caption{\label{fig:spikein}Comparison of CBS segments (lines) and $M$ values (points) before and
     after \ArrayTV{} wave correction (rows) for three array
-    platforms (columns) in the vicinity of a known amplification of copy number 2.5 (blue).}
+    platforms (columns) in the vicinity of a known amplification of copy number 2.5 (red).}
   \end{center}
 \end{figure}
 

@@ -63,6 +63,8 @@ Optimal window finding was inspired by a similar concept applied to gc correctio
 Eitan Halper-Stromberg
 }
 \examples{
+## Example with parallelization, setting the number of processors to 3
+\dontrun{
 	path <- system.file("extdata", package="ArrayTV")
 	load(file.path(path, "array_logratios.rda"))
 	nimblegen[, "M"] <- nimblegen[, "M"]/1000
@@ -70,7 +72,7 @@ Eitan Halper-Stromberg
 	increms <- c(10,1000,100e3)
 	wins <- c(100,10e3,1e6)
 	## nodes may be set to the number of cpus available
-	nodes <- 1
+	nodes <- 3
 	library(doMC)
 	registerDoMC(nodes)
 	## calculate tv scores in many windows and correct M values
@@ -92,4 +94,5 @@ Eitan Halper-Stromberg
 				maxwins=winsorted[logwinsortdiff>=1][1],
 				build='hg18')
 	## Refer to the vignette for details
+}
 }

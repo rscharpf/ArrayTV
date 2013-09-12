@@ -16,10 +16,11 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr='',
 	## library('doMC')
 	## library('DNAcopy')
 	## registerDoMC(nodes) ## do at command line
+
 	narrays <- ncol(Ms)
-	if(is.null(providedGC)){ ##otherwise, its a vector of GC scores
+	## if(is.null(providedGC)){ ##otherwise, its a vector of GC scores
 		uniqchrs <- unique(chr)
-                if (samplechr=='') samplechr <- uniqchrs
+                if (samplechr[1]=='') samplechr <- uniqchrs
 		remainingChr <- uniqchrs[is.na(match(uniqchrs, samplechr))]
                 if(increms[1]==0) increms <- maxwins
 		nparts <- maxwins[1] / increms[1]
@@ -30,14 +31,25 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr='',
 		}
 
 		strategyuse <- 2
+		##useM <- as(Ms[chr %in% samplechr, ], "matrix")
+		useM <- Ms[chr %in% samplechr, , drop=FALSE]
 		## RS: I think you need to have the annotation package in your foreach call
+                if(is.null(providedGC)){ ##otherwise, its a vector of GC scores
 		gcFracBoth <- gcFracAllWin(maxwins, increms, chr,
 					   starts, samplechr, uniqchrs,
 					   strategyuse,
 					   annotation.pkg=pkgname,
 					   verbose=verbose)
-		##useM <- as(Ms[chr %in% samplechr, ], "matrix")
-		useM <- Ms[chr %in% samplechr, , drop=FALSE]
+            }else if(is.list(providedGC)){
+                gcFracBoth <- do.call(cbind,providedGC)
+            }else if(is.vector(providedGC)){
+                gcFracBoth <- as.matrix(providedGC)
+            }else gcFracBoth <- providedGC
+
+
+                if(is.null(providedGC) | ncol(gcFracBoth)>1 | returnOnlyTV){
+
+
 		## first TVscore
 		tvScore <- calctvScore(gcFracBoth, samplechr, nparts, useM, narrays, increms, verbose=verbose)
 		rown=list()
@@ -45,7 +57,9 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr='',
 			rown[[ii]]=seq(increms[ii],maxwins[ii],increms[ii])
 		}
 		dimnames(tvScore) <- list(unlist(rown),colnames(Ms))
+
 		if(returnOnlyTV)  return(tvScore)
+
 		## CHECK TO SEE IF TVSCORES ARE THE SAME AS ANTICIPATED
 		maxTVscores <- rep(0, narrays)
 		correctionVals <- list()
@@ -62,12 +76,18 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr='',
 							       gmaxvalsInd,
 							       tvScore,
 							       verbose=verbose)
-		if(onlyGC) result <- priorFracWremaining
+                if(is.list(priorFracWremaining)) names(priorFracWremaining) <-unique(as.numeric(rownames(tvScore))[gmaxvalsInd])
+                else {
+                    priorFracWremaining <- as.matrix(priorFracWremaining)
+                    colnames(priorFracWremaining) <- unique(as.numeric(rownames(tvScore))[gmaxvalsInd])
+                }
+		if(onlyGC) return(priorFracWremaining)
 	} else{
 		priorFracWremaining <- providedGC
-		userProvidedGC <- TRUE;gmaxvalsInd <- 0;tvScore <- 0;gcFracBoth <- 0;nparts <- 0;samplechr <- ''
-		increm <- 0; increm2 <- 0;
-	}
+		userProvidedGC <- TRUE;gmaxvalsInd <- tvScore <- gcFracBoth <-nparts <- gmaxvals <- increms <- gcFracBoth <- 0
+                samplechr <- ''
+            }
+
 	correctedM <- CorrectM(Ms,chr,starts,priorFracWremaining,narrays,userProvidedGC,gmaxvalsInd,jittercorrection,
 			       tvScore,gcFracBoth,nparts,samplechr,increms,verbose=verbose)
 	##        (gcFracBoth, useM, Ms, starts, narrays, nparts,
@@ -81,12 +101,13 @@ gcCorrectMain <- function(Ms, chr, starts, samplechr='',
 	##		rownames(result) <- paste(c(seq(increm, maxwin, increm), seq(increm2, maxwin2, increm2)), "bp", sep="")
 	##	}
 	if(!is.null(colnames(Ms))) colnames(result) <- colnames(Ms)
-        if(is.list(priorFracWremaining)) names(priorFracWremaining) <- colnames(Ms)
+        ##if(is.list(priorFracWremaining)) names(priorFracWremaining) <- unique(as.numeric(rownames(tvScore))[gmaxvalsInd])
 	resultList<-list(tvScore,optimalwins<-as.numeric(rownames(tvScore))[gmaxvalsInd],
                          maxTVscores<-gmaxvals,gcVals<-priorFracWremaining, result)
         names(resultList)<-c('tvScore','optimalWin','maxTVscore','GCvals','correctedVals')
+
         return(resultList)
-}
+    }
 
 
 ##impleGcCorrect <- function(){

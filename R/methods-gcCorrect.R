@@ -83,22 +83,22 @@ gcCorrectBafLrrList <- function(object, index.samples, providedGC=NULL,...){
 		R[namatrix] <- 0 ## not ideal
 		if(gc.provided){
 			for(k in seq_len(ncol(providedGC))){
-				R <- gcCorrectMain(Ms=R,
+				R <- (gcCorrectMain(Ms=R,
 						   chr=chr,
 						   starts=pos,
 						   samplechr=unique(chr),
 						   build=genomeBuild(object),
 						   providedGC=providedGC[, k],
-						   ...)
+						   ...))[['correctedVals']]
 			}
 		} else {
-			R <- gcCorrectMain(Ms=R,
+			R <- (gcCorrectMain(Ms=R,
 					   chr=chr,
 					   starts=pos,
 					   samplechr=unique(chr),
 					   build=genomeBuild(object),
 					   providedGC=providedGC,
-					   ...)
+					   ...))[['correctedVals']]
 		}
 		if(!only.tv) {
 			R <- integerMatrix(R, 100)
