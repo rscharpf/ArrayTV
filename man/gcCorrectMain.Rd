@@ -73,8 +73,7 @@ Eitan Halper-Stromberg
 	wins <- c(100,10e3,1e6)
 	## nodes may be set to the number of cpus available
 	nodes <- 3
-	library(doMC)
-	registerDoMC(nodes)
+        if(require(doMC)) registerDoMC(nodes)
 	## calculate tv scores in many windows and correct M values
 	## using the best window
 	nimcM1List <- gcCorrectMain(nimblegen[, "M", drop=FALSE],
@@ -94,5 +93,6 @@ Eitan Halper-Stromberg
 				maxwins=winsorted[logwinsortdiff>=1][1],
 				build='hg18')
 	## Refer to the vignette for details
+
 }
 }

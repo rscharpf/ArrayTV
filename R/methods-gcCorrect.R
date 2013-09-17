@@ -142,7 +142,7 @@ gcModel <- function(data, window, verbose=FALSE){
 	## assume data is summarized experiment
 	build <- metadata(rowData(data))$genome
 	library(paste("BSgenome.Hsapiens.UCSC.", build, sep=''), character.only=TRUE)
-	if(verbose) print('Getting gc content From BS genome Object')
+	if(verbose) message('Getting gc content From BS genome Object')
 	Hsapiens <- get("Hsapiens")
 	chroms <- unique(chromosome(data))
 	maxwin <- increm <- window
@@ -191,7 +191,7 @@ gcModelSeq <- function(data, window, verbose=FALSE){
 	## assume data is summarized experiment
 	build <- genome(rowData(data))[[1]]
 	library(paste("BSgenome.Hsapiens.UCSC.", build, sep=''), character.only=TRUE)
-	if(verbose) print('Getting gc content From BS genome Object')
+	if(verbose) message('Getting gc content From BS genome Object')
 	Hsapiens <- get("Hsapiens")
 	chroms <- unique(chromosome(data))
 	maxwin <- increm <- window

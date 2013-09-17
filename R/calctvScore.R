@@ -36,7 +36,7 @@ calctvScore <- function(gcFracBoth, samplechr, nparts, ## samplechr is not used
 			}else{
 				tvscore <- rowSums(rep((ngc/n),each=narrays)*(abs(toplot-lambda)))
 			}
-			if(verbose) print(paste('windows stretch',increms[i]*hh,'bp from probes, TV:', round(tvscore,4)))
+			if(verbose) message(paste('windows stretch',increms[i]*hh,'bp from probes, TV:', round(tvscore,4)))
 			tvScorepart[hh,] <- na.omit(tvscore)
 		}
 		tvScorepart

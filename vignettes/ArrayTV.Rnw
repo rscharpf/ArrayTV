@@ -75,9 +75,8 @@ the $M$ values for each platform to the original scale.
 <<loaddata>>=
 library(ArrayTV)
 ### parallelization will be discussed later but for now we provide the following
-### two commands to avoid warnings
-library(doMC)
-registerDoMC(1)
+### command to avoid warnings
+if(require(doMC)) registerDoMC(1)
 
 path <- system.file("extdata", package="ArrayTV")
 load(file.path(path, "array_logratios.rda"))
@@ -105,11 +104,13 @@ increms <- c(20, 2000, 200e3)
 
 \noindent The above specification indicates that we will compute TV
 scores for three sequential window sizes as follows.  The first series
-of windows has maximum window size of 100 (\texttt{max.window[1]}) and
-increment value 20 (\texttt{increms[1]}), indicating that windows 20,
-40, \ldots, and 100 will be evaluated. For the second series, the
-maximum window is 10e3 (\texttt{max.window[2]}) and windows 2000,
-4000, \ldots, 10e3 will be evaluated since the increment value is 2000
+of windows has a maximum window extension of 100 from center,
+(\texttt{max.window[1]}) (effective maximum window size is therefore 200 since
+we extend in both directions) and increment extension value 20 (\texttt{increms[1]})
+again, extending from the center of the window, indicating that windows extending
+20, 40, \ldots, and 100 from the probe starts will be evaluated. For the second series,
+the maximum window extension is 10e3 (\texttt{max.window[2]}) and window extensions
+2000, 4000, \ldots, 10e3 will be evaluated since the increment value is 2000
 (\texttt{increms[2]}). For each of the three series, the number of
 windows to be evaluated is 5.  The sequence for each series must have
 the same length.
@@ -158,17 +159,15 @@ agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
 @
 
 To plot the TV score for each of the windows evaluated, we concatenate
-the results from each platform into a list and pass the list into the
-\Rfunction{plotTV} function (below). This function uses the
-\Robject{increms} and \Robject{max.window} vectors to organize
-plotting based on the size of the genomic windows used to compute GC
-(small, medium, and large).
+the results from each platform into a list and then convert the elements
+representing the TVscores into a data.frame. Plotting is based on the
+size of the genomic windows used to compute GC (small, medium, and large).
 
 
 <<tvscorefig,fig=TRUE,include=FALSE, width=8, height=5>>=
 results <- list(nimcM1List,agcM1List,afcM1List)
 tvscores <- do.call("rbind", lapply(results, "[[", "tvScore"))[, 1]
-tv.df <- data.frame(tv=tvscores, platform=rep(c("NimbleGen", "Agilent", "Affy 6.0"), each=15),
+tv.df <- data.frame(tv=tvscores, platform=rep(c("NimbleGen", "Agilent", "Affy 2.7M"), each=15),
 		    window=c(seq(20, 100, 20),
 		    seq(2000, 10e3, 2e3), seq(2e5, 1e6, 2e5))*2)
 op <- par(no.readonly = TRUE)

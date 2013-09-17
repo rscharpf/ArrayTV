@@ -5,7 +5,7 @@ getGCinBestWindowGenome <- function(gcFracBoth, starts, nparts,
 				    tvScore, verbose=FALSE){
         i <- NULL
         priorFracWremaining <- foreach(i=which(!duplicated(gmaxvalsInd)), .combine='list',.multicombine=TRUE, .packages="ArrayTV") %dopar% {
-		if(verbose) print(paste('A maximum first pass  TV is', gmaxvals[i],'in window',rownames(tvScore)[gmaxvalsInd[i]]))
+		if(verbose) message(paste('A maximum first pass  TV is', gmaxvals[i],'in window',rownames(tvScore)[gmaxvalsInd[i]]))
 
 		## maximum tv score window
 		maxuse1 <- gmaxvalsInd[i]
@@ -20,7 +20,7 @@ getGCinBestWindowGenome <- function(gcFracBoth, starts, nparts,
 			reverseExtend <- forwardExtend
 
 			priorFracWremaining <- priorFracsRestOfGenome(forwardExtend,reverseExtend,remainingChr,starts,chr)
-			if(verbose) print(paste('forward extend',forwardExtend,'reverse extend',reverseExtend))
+			if(verbose) message(paste('forward extend',forwardExtend,'reverse extend',reverseExtend))
 
 			priorFracWremaining[chr %in% samplechr] <- priorFrac
 		}

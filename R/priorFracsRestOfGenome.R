@@ -2,7 +2,7 @@ priorFracsRestOfGenome <-
 function(forwardExtend,reverseExtend,chrToInvestigate,locs,chrs){
 gcFrac=rep(0,length(locs))
 winlen=reverseExtend+forwardExtend
-print(paste('calculating gc content for the rest of the genome for window',forwardExtend,'bp'))
+message(paste('calculating gc content for the rest of the genome for window',forwardExtend,'bp'))
   for(x in chrToInvestigate){
   li=which(chrs==x)
   ll=locs[li]
@@ -30,7 +30,7 @@ print(paste('calculating gc content for the rest of the genome for window',forwa
 
   cat('.')
   if(length(gcFrac[li]) != length(ll)){
-    print('something is wrong with gc dnastring set')
+    warning('something is wrong with gc dnastring set')
   }
   quants=sort(unique(quantile(gcIndivChr,probs=seq(0,1,.01))))
 gcFrac[li]=quants[findInterval(gcIndivChr,quants)]

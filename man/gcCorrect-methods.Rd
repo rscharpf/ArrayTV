@@ -78,8 +78,7 @@ increms <- c(10,1000,100e3)
 wins <- c(100,10e3,1e6)
 ## nodes may be set to the number of cpus available
 nodes=1
-library(doMC)
-registerDoMC(nodes)
+if(require(doMC)) registerDoMC(nodes)
 ## calculate tv scores in many windows and correct M values using the best window
 nimcM1List<-gcCorrectMain(nimblegen[, "M",
 drop=FALSE],chr=rep("chr15",nrow(nimblegen)),starts=nimblegen[,
@@ -171,5 +170,6 @@ nimcM2List<-gcCorrect(nimcM1List[['correctedVals']],chr=rep("chr15",nrow(nimbleg
 			  maxwins=c(12, 10e3),
 			  providedGC=gc.matrix)
 	}
+
 }
 }

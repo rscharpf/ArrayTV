@@ -39,7 +39,7 @@ gcFracAllWin <- function(maxwins, increms,
                 schr <- gsub('23', 'X', schr)
                 schr <- gsub('24', 'X', schr)
 
-                if(verbose) print('Getting gc content From BS genome Object')
+
                 maxwinuse <- maxwins[which(increms==incremuse)]
                 gcFrac <- as.matrix(gcFracOneRange(schr,starts,incremuse,maxwinuse,verbose))
             } ## end strategy 2
