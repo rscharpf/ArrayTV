@@ -1,7 +1,7 @@
 Package: ArrayTV
-Version: 0.99.2
+Version: 0.99.3
 Title: Implementation of wave correction for arrays
-Date: 2012-07-09
+Date: Thu Sep 19 10:45:22 EDT 2013
 Author: Eitan Halper-Stromberg
 Maintainer: Eitan Halper-Stromberg <Eitan177@gmail.com>
 Description: Wave correction for genotyping and copy number arrays
@@ -19,3 +19,6 @@ Collate: AllGenerics.R calctvScore.R computeGC.R correctionTVscore.R
         priorFracsRestOfGenome.R
 biocViews: Bioinformatics,CopyNumberVariants
 Packaged: 2013-09-13 00:23:13 UTC; ehalper
+## Local Variables:
+## time-stamp-pattern: "8/Date: %3a %3b %2d %02H:%02M:%02S %Z %:y\n"
+## End:
