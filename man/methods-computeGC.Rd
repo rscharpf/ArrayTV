@@ -34,24 +34,21 @@
 \keyword{methods}
 
 \examples{
-	\dontrun{
-		if(require(crlmm) && require(ff)){
-			data(cnSetExample, package="crlmm")
-			brList <- constructBafLrrSetListFrom(cnSetExample)
-
-			pos <- unlist(position(brList))
-			chr <- paste("chr",
-				     rep(chromosome(brList), elementLengths(brList)),
-				     sep="")
-			gc.matrix1 <- computeGC(x=pos,
-						maxwins=c(12,10e3),
-						increms=c(12,10e3),
-						chr=chr,
-						build="hg18")
-
-			gc.matrix2 <- computeGC(brList, c(12, 10e3),
-						c(12, 10e3))
-
-		}
+\dontrun{
+    if(require(crlmm) && require(ff)){
+	data(cnSetExample, package="crlmm")
+	brList <- BafLrrSetList(cnSetExample)
+	pos <- unlist(position(brList))
+	chr <- paste("chr",
+		     rep(chromosome(brList), elementLengths(brList)),
+		     sep="")
+	gc.matrix1 <- ArrayTV:::computeGC(x=pos, maxwins=c(12,10e3),
+           				  increms=c(12,10e3),
+		         		  chr=chr,
+				          build="hg18")
+	gc.matrix2 <- ArrayTV:::computeGC(brList, c(12, 10e3),
+         			          c(12, 10e3), build="hg18")
+        identical(gc.matrix1, gc.matrix2)
 	}
+}
 }
