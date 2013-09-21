@@ -34,8 +34,13 @@
 \keyword{methods}
 
 \examples{
-\dontrun{
-    if(require(crlmm) && require(ff)){
+\donttest{
+    if(require(crlmm) && require(ff) && require(doParallel)){
+	## nodes may be set to the number of cpus available
+        nodes<-3
+        cl <- makeCluster(nodes)
+        registerDoParallel(cl)
+
 	data(cnSetExample, package="crlmm")
 	brList <- BafLrrSetList(cnSetExample)
 	pos <- unlist(position(brList))
@@ -45,10 +50,11 @@
 	gc.matrix1 <- ArrayTV:::computeGC(x=pos, maxwins=c(12,10e3),
            				  increms=c(12,10e3),
 		         		  chr=chr,
-				          build="hg18")
+				          build="hg19")
 	gc.matrix2 <- ArrayTV:::computeGC(brList, c(12, 10e3),
-         			          c(12, 10e3), build="hg18")
+         			          c(12, 10e3))
         identical(gc.matrix1, gc.matrix2)
-	}
+        stopCluster(cl)
+}
 }
 }

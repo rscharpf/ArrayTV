@@ -9,7 +9,7 @@ License: GPL (>= 2)
 LazyLoad: yes
 Depends: R (>= 2.14)
 Imports: foreach, DNAcopy, methods, oligoClasses (>= 1.21.3)
-Suggests: RColorBrewer,
+Suggests: RColorBrewer, crlmm, ff,
         BSgenome.Hsapiens.UCSC.hg18,BSgenome.Hsapiens.UCSC.hg19,
         lattice, latticeExtra, RUnit, BiocGenerics
 Enhances: doMC, doSNOW, doParallel
@@ -18,7 +18,7 @@ Collate: AllGenerics.R calctvScore.R computeGC.R correctionTVscore.R
         getGCinBestWindowGenome.R methods-gcCorrect.R priorFracs.R
         priorFracsRestOfGenome.R
 biocViews: Bioinformatics,CopyNumberVariants
-Packaged: 2013-09-13 00:23:13 UTC; ehalper
+Packaged: 2013-09-21 19:59:48 UTC; ehalper
 ## Local Variables:
 ## time-stamp-pattern: "8/Date: %3a %3b %2d %02H:%02M:%02S %Z %:y\n"
 ## End:

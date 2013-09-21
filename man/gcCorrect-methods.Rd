@@ -69,16 +69,20 @@ Correct gc biases in array data for arrays stored as objects of an acceptable cl
 \keyword{smooth}
 
 \examples{
-### Example with 2 iterations of correction
-\dontrun{
+\donttest{
+        ## Example with 2 iterations of correction
 	path <- system.file("extdata", package="ArrayTV")
 	load(file.path(path, "array_logratios.rda"))
 	nimblegen[, "M"] <- nimblegen[, "M"]/1000
 	increms <- c(10,1000,100e3)
 	wins <- c(100,10e3,1e6)
-	## nodes may be set to the number of cpus available
-	nodes=1
-	if(require(doMC)) registerDoMC(nodes)
+        if(require(doParallel)){
+	  ## nodes may be set to the number of cpus available
+          nodes<-3
+          cl <- makeCluster(nodes)
+          registerDoParallel(cl)
+        }
+
 	## calculate tv scores in many windows and correct M values using the best window
 	nimcM1List <- gcCorrectMain(nimblegen[, "M",
 										drop=FALSE],
@@ -172,6 +176,7 @@ Correct gc biases in array data for arrays stored as objects of an acceptable cl
 			ArrayTV:::gcCorrect(brList.copy, increms=c(12, 10e3),
 								maxwins=c(12, 10e3),
 								providedGC=gc.matrix)
-	}
+                        stopCluster(cl)
+}
 }
 }

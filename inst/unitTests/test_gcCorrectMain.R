@@ -5,6 +5,11 @@ test_gcCorrectMain <- function() {
     nimblegen[, "M"] <- nimblegen[, "M"]/1000
     max.window <- c(100,10e3,1e6)
     increms <- c(20, 2000, 200e3)
+    if(require(doParallel)){
+        cl <- makeCluster(1)
+        registerDoParallel(cl)
+    }
+
     nimcM1List <- gcCorrect(object=nimblegen[, "M", drop=FALSE],
 			chr=rep("chr15", nrow(nimblegen)),
                         starts=nimblegen[, "position"],
@@ -20,4 +25,5 @@ test_gcCorrectMain <- function() {
     ## Our TVscore should be pretty large for this chromosome
     checkTrue(nimcM1List[["maxTVscore"]] > 0.05)
     save(nimcM1List, file=file.path(path,"nimcM1List.rda"))
+    stopCluster(cl)
 }

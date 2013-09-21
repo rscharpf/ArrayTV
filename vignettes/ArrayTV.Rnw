@@ -76,7 +76,10 @@ the $M$ values for each platform to the original scale.
 library(ArrayTV)
 ### parallelization will be discussed later but for now we provide the following
 ### command to avoid warnings
-if(require(doMC)) registerDoMC(1)
+if(require(doParallel)){
+cl <- makeCluster(1)
+registerDoParallel(cl)
+}
 
 path <- system.file("extdata", package="ArrayTV")
 load(file.path(path, "array_logratios.rda"))
@@ -156,6 +159,7 @@ agcM1List <- gcCorrect(agilent[, "M", drop=FALSE],
                        increms=increms,
                        maxwins=max.window,
                        build="hg18")
+stopCluster(cl)
 @
 
 To plot the TV score for each of the windows evaluated, we concatenate
@@ -436,14 +440,17 @@ print(p3)
 When multiple cores are available, computation can proceed in parallel
 for computing the GC content for the various window sizes specified.
 To enable parallelization across 8 cores using the
-\Rpackage{multicore} package, one could execute the following
+\Rpackage{doParallel} package, one could execute the following
 (unevaluated) code chunk prior to calling the \Rfunction{gcCorrect}
 function:
 
 <<enablePar,eval=FALSE>>=
-nodes <- 8
-library(doMC)
-registerDoMC(nodes)
+if(require(doParallel)){
+cl <- makeCluster(8)
+registerDoParallel(cl)
+}
+## ... execute gcCorrect
+stopCluster(cl)
 @
 
 
